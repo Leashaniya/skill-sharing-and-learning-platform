@@ -150,78 +150,93 @@ public class AuthController {
 	}
 
 	@PostMapping("/signup")
-	public ResponseEntity<AuthResponse> createUserHandler(@Valid @RequestBody User user) throws UserException{
-		
-		  	String email = user.getEmail();
-	        String password = user.getPassword();
-	        String fullName=user.getFullName();
-	        String birthDate=user.getBirthDate();
-	        
-	        User isEmailExist=userRepository.findByEmail(email);
+	public ResponseEntity<AuthResponse> createUserHandler(@Valid @RequestBody User user) throws UserException {
+		try {
+			String email = user.getEmail();
+			String password = user.getPassword();
+			String fullName = user.getFullName();
+			String birthDate = user.getBirthDate();
+			
+			User isEmailExist = userRepository.findByEmail(email);
+			
+			if (isEmailExist != null) {
+				throw new UserException("Email Is Already Used With Another Account");
+			}
 
-	        
-	        if (isEmailExist!=null) {
-	
-	        	
-	            throw new UserException("Email Is Already Used With Another Account");
-	        }
-
-	        // Create new user
-			User createdUser= new User();
+			// Create new user
+			User createdUser = new User();
 			createdUser.setEmail(email);
 			createdUser.setFullName(fullName);
-	        createdUser.setPassword(passwordEncoder.encode(password));
-	        createdUser.setBirthDate(birthDate);
-	        createdUser.setVerification(new Varification());
-	        
-	        User savedUser= userRepository.save(createdUser);
-	        
-	        Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
-	        SecurityContextHolder.getContext().setAuthentication(authentication);
-	        
-	        String token = jwtProvider.generateToken(authentication);
-
-	        AuthResponse authResponse= new AuthResponse(token,true);
+			createdUser.setPassword(passwordEncoder.encode(password));
+			createdUser.setBirthDate(birthDate);
+			createdUser.setVerification(new Varification());
 			
-	        return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
-		
+			userRepository.save(createdUser);
+			
+			AuthResponse authResponse = new AuthResponse();
+			authResponse.setStatus(true);
+			authResponse.setMessage("Registration successful");
+			
+			return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.OK);
+		} catch (UserException e) {
+			AuthResponse authResponse = new AuthResponse();
+			authResponse.setStatus(false);
+			authResponse.setMessage(e.getMessage());
+			return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			AuthResponse authResponse = new AuthResponse();
+			authResponse.setStatus(false);
+			authResponse.setMessage("An error occurred during registration");
+			return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	@PostMapping("/signin")
     public ResponseEntity<AuthResponse> signin(@RequestBody LoginRequest loginRequest) {
-
-        String username = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
-        
-        System.out.println(username +" ----- "+password);
-        
-        Authentication authentication = authenticate(username, password);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        
-        String token = jwtProvider.generateToken(authentication);
-        AuthResponse authResponse= new AuthResponse();
-		
-		authResponse.setStatus(true);
-		authResponse.setJwt(token);
-		
-        return new ResponseEntity<AuthResponse>(authResponse,HttpStatus.OK);
+        try {
+            String username = loginRequest.getEmail();
+            String password = loginRequest.getPassword();
+            
+            Authentication authentication = authenticate(username, password);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
+            String token = jwtProvider.generateToken(authentication);
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setJwt(token);
+            authResponse.setStatus(true);
+            
+            return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.OK);
+        } catch (BadCredentialsException e) {
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setStatus(false);
+            if (e.getMessage().equals("User not Found")) {
+                authResponse.setMessage("User not Found");
+            } else if (e.getMessage().equals("Invalid password")) {
+                authResponse.setMessage("Invalid password");
+            } else {
+                authResponse.setMessage("Invalid credentials");
+            }
+            return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setStatus(false);
+            authResponse.setMessage("Invalid credentials");
+            return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.UNAUTHORIZED);
+        }
     }
 
 	
 	private Authentication authenticate(String username, String password) {
         UserDetails userDetails = customUserDetails.loadUserByUsername(username);
         
-        System.out.println("sign in userDetails - "+userDetails);
-        
         if (userDetails == null) {
-        	System.out.println("sign in userDetails - null " + userDetails);
-            throw new BadCredentialsException("Invalid username or password");
+            throw new BadCredentialsException("User not Found");
         }
+        
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-        	System.out.println("sign in userDetails - password not match " + userDetails);
-            throw new BadCredentialsException("Invalid username or password");
+            throw new BadCredentialsException("Invalid password");
         }
+        
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 }

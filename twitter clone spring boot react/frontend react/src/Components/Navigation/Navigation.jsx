@@ -31,6 +31,8 @@ const Navigation = () => {
   const handleNavigation = (item) => {
     if (item.title === "Profile" && auth.user?.id) {
       navigate(`/profile/${auth.user.id}`);
+    } else if (item.title === "Home") {
+      navigate("/home");
     } else {
       navigate(item.path);
     }

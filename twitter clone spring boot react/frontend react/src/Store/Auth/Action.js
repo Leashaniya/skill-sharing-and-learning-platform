@@ -73,13 +73,21 @@ export const loginUser = (loginData) => async (dispatch) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/auth/signin`, loginData);
     const user = response.data;
-    console.log("login user -: ", user);
-    if (user.jwt) {
-      localStorage.setItem("jwt", user.jwt);
+    
+    if (user.status) {
+      if (user.jwt) {
+        localStorage.setItem("jwt", user.jwt);
+      }
+      dispatch(loginSuccess(user));
+      return { payload: { status: true, jwt: user.jwt } };
+    } else {
+      dispatch(loginFailure(user.message));
+      return { payload: { status: false, message: user.message } };
     }
-    dispatch(loginSuccess(user));
   } catch (error) {
-    dispatch(loginFailure(error.message || "An error occurred during login."));
+    const errorMessage = error.response?.data?.message || "Invalid credentials";
+    dispatch(loginFailure(errorMessage));
+    return { payload: { status: false, message: errorMessage } };
   }
 };
 
@@ -91,10 +99,13 @@ export const loginWithGoogleAction = (data) => async (dispatch) => {
     console.log("login with google user -: ", user);
     if (user.jwt) {
       localStorage.setItem("jwt", user.jwt);
+      dispatch({type:GOOGLE_LOGIN_SUCCESS,payload:user.jwt});
+      return { payload: { status: true, jwt: user.jwt } };
     }
-    dispatch({type:GOOGLE_LOGIN_SUCCESS,payload:user.jwt});
+    return { payload: { status: false, message: "Google login failed" } };
   } catch (error) {
     dispatch({type:GOOGLE_LOGIN_FAILURE, payload: error.message || "An error occurred during login."});
+    return { payload: { status: false, message: error.message || "An error occurred during login." } };
   }
 };
 
@@ -105,15 +116,18 @@ export const registerUser = (userData) => async (dispatch) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/auth/signup`, userData);
     const user = response.data;
-    console.log("created user - : ", user);
-    if (user.jwt) {
-      localStorage.setItem("jwt", user.jwt);
+    
+    if (user.status) {
+      dispatch(registerSuccess(user));
+      return { success: true, payload: user };
+    } else {
+      dispatch(registerFailure(user.message));
+      return { success: false, error: { message: user.message } };
     }
-    dispatch(registerSuccess(user));
   } catch (error) {
-    dispatch(
-      registerFailure(error.message || "An error occurred during registration.")
-    );
+    const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+    dispatch(registerFailure(errorMessage));
+    return { success: false, error: { message: errorMessage } };
   }
 };
 
@@ -178,6 +192,33 @@ export const updateUserProfile = (reqData) => async (dispatch) => {
     dispatch({type:UPDATE_USER_SUCCESS,payload:user});
   } catch (error) {
     dispatch({type:UPDATE_USER_FAILURE,payload:error.message});
+  }
+};
+
+export const deleteUser = (userId) => async (dispatch) => {
+  try {
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.delete(`/api/users/${userId}`, {
+      headers: {
+        "Authorization": `Bearer ${jwt}`
+      }
+    });
+    
+    if (response.status === 200) {
+      // Clear local storage and dispatch logout
+      localStorage.removeItem("jwt");
+      dispatch({ type: LOGOUT });
+      return true;
+    }
+    
+    throw new Error("Failed to delete user");
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
   }
 };
 

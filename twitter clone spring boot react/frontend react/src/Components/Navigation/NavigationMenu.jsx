@@ -5,6 +5,7 @@ import MessageIcon from '@mui/icons-material/Message'
 import GroupIcon from '@mui/icons-material/Group'
 import SchoolIcon from '@mui/icons-material/School'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 
 export const navigationMenu = [
     {
@@ -36,6 +37,11 @@ export const navigationMenu = [
         title: "Skill Sharing",
         icon: <SchoolIcon />,
         path: "/skill-sharing"
+    },
+    {
+        title: "Learning Journey",
+        icon: <AutoStoriesIcon />,
+        path: "/learning-journey"
     },
     {
         title: "Profile",

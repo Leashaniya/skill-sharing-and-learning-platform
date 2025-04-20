@@ -29,10 +29,20 @@ const Authentication = () => {
     }
   }, [location.pathname]);
 
-  const loginWithGoole = (res) => {
-    console.log("res : ", res);
-    dispatch(loginWithGoogleAction(res));
-    // return
+  const loginWithGoole = async (res) => {
+    try {
+      const result = await dispatch(loginWithGoogleAction(res));
+      if (result.payload?.status) {
+        // Close the modal if it's open
+        setAuthModelOpen(false);
+        // Navigate to home section
+        setTimeout(() => {
+          navigate("/home");
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+    }
   };
 
   return (

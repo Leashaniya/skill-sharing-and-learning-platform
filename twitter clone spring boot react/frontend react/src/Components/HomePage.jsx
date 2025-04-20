@@ -9,6 +9,7 @@ import { selectTheme } from "../Store/Theme/Selectors";
 import { Route, Routes } from 'react-router-dom'
 import Profile from './Profile/Profile'
 import TwitDetail from './Home/MiddlePart/TwitDetail'
+import LearningJourney from './LearningJourney/LearningJourney'
 
 const HomePage = () => {
   const auth = useSelector(selectAuth);
@@ -32,6 +33,7 @@ const HomePage = () => {
           <Route path="/home" element={<HomeSection />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/twit/:id" element={<TwitDetail />} />
+          <Route path="/learning-journey" element={<LearningJourney />} />
         </Routes>
       </Grid>
       <Grid item xs={0} lg={3} className="hidden lg:block w-full relative">

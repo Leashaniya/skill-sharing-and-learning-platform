@@ -27,16 +27,22 @@ const AuthModel = ({ open, handleClose }) => {
   const auth = useSelector(selectAuth);
 
   useEffect(() => {
-    // Close modal and redirect to home when user is authenticated
-    if (auth.jwt) {
+    // Only redirect to home if user is authenticated and not in signup/signin process
+    if (auth.jwt && !location.pathname.includes("sign")) {
       handleClose();
       navigate("/");
     }
-  }, [auth.jwt, handleClose, navigate]);
+  }, [auth.jwt, handleClose, navigate, location.pathname]);
 
   const handleNavigate = () => {
     const path = location.pathname === "/signup" ? "/signin" : "/signup";
     navigate(path);
+  };
+
+  const handleSignupSuccess = () => {
+    // Close the modal first
+    handleClose();
+    // Let the SignupForm handle the navigation
   };
 
   return (
@@ -48,7 +54,11 @@ const AuthModel = ({ open, handleClose }) => {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          {location.pathname === "/signup" ? <SignupForm /> : <SigninForm />}
+          {location.pathname === "/signup" ? (
+            <SignupForm onSuccess={handleSignupSuccess} />
+          ) : (
+            <SigninForm />
+          )}
 
           <div className="flex items-center justify-center space-x-1 mt-5">
             <p className="text-center">

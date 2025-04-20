@@ -1,11 +1,11 @@
-import { Route, Routes } from 'react-router-dom';
+import { Routes, Route, Navigate } from "react-router-dom";
 import './App.css';
 import Authentication from './Components/Authentication/Authentication';
 import HomePage from './Components/HomePage';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { getUserProfile } from './Store/Auth/Action';
-import PrivateRoute from './Components/PrivateRoute/PrivateRoute';
+import PrivateRoute from './Components/Authentication/PrivateRoute';
 
 import darkTheme from './Theme/DarkTheme';
 import lightTheme from './Theme/LightTheme';
@@ -36,17 +36,35 @@ function App() {
       <Box>
         <Routes>
           {/* Public Routes */}
+          <Route path='/' element={<Navigate to="/auth" replace />} />
+          <Route path='/auth' element={<Authentication />} />
           <Route path='/signin' element={<Authentication />} />
           <Route path='/signup' element={<Authentication />} />
           <Route path='/verified' element={<VerifiedSuccess />} />
 
           {/* Protected Routes */}
           <Route
+            path='/home'
+            element={
+              auth.user ? (
+                <PrivateRoute>
+                  <HomePage />
+                </PrivateRoute>
+              ) : (
+                <Navigate to="/auth" />
+              )
+            }
+          />
+          <Route
             path='/*'
             element={
-              <PrivateRoute>
-                <HomePage />
-              </PrivateRoute>
+              auth.user ? (
+                <PrivateRoute>
+                  <HomePage />
+                </PrivateRoute>
+              ) : (
+                <Navigate to="/auth" />
+              )
             }
           />
         </Routes>

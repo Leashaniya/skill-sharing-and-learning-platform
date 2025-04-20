@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { Avatar, Backdrop, Box, Button, CircularProgress } from "@mui/material";
+import { Avatar, Backdrop, Box, Button, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { BusinessCenterSharp } from "@mui/icons-material";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -13,8 +13,10 @@ import TabPanel from "@mui/lab/TabPanel";
 import { getUserPosts, findPostsByLikesContainUser } from "../../Store/Post/Action";
 import SkillPost from "../Home/MiddlePart/SkillPost";
 import ProfileModel from "./ProfileModel";
-import { FollowUserAction, findUserById } from "../../Store/Auth/Action";
+import { FollowUserAction, findUserById, deleteUser } from "../../Store/Auth/Action";
 import SnackbarComponent from "../Snackbar/SnackbarComponent";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const Profile = () => {
   const [tabValue, setTabValue] = React.useState("1");
@@ -57,6 +59,22 @@ const Profile = () => {
   const handleCloseSnackBar = () => setOpenSnackBar(false);
   const handleFollowUser = () => dispatch(FollowUserAction(param.id));
 
+  const handleDeleteUser = async () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      try {
+        const result = await dispatch(deleteUser(auth.findUser.id));
+        if (result) {
+          navigate('/');
+        } else {
+          alert('Failed to delete account. Please try again later.');
+        }
+      } catch (error) {
+        console.error('Error deleting account:', error);
+        alert(error.response?.data?.message || 'Failed to delete account. Please try again later.');
+      }
+    }
+  };
+
   return (
     <React.Fragment>
       <section
@@ -92,14 +110,34 @@ const Profile = () => {
             sx={{ width: "10rem", height: "10rem", border: "4px solid white" }}
           />
           {auth.findUser?.req_user ? (
-            <Button
-              onClick={handleOpenProfileModel}
-              sx={{ borderRadius: "20px" }}
-              variant="outlined"
-              className="rounded-full"
-            >
-              Edit Profile
-            </Button>
+            <div className="flex space-x-2">
+              <Tooltip title="Edit account" arrow>
+                <IconButton
+                  onClick={handleOpenProfileModel}
+                  sx={{ 
+                    color: '#1d9bf0',
+                    '&:hover': {
+                      backgroundColor: 'rgba(29, 155, 240, 0.1)'
+                    }
+                  }}
+                >
+                  <EditIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete account" arrow>
+                <IconButton
+                  onClick={handleDeleteUser}
+                  sx={{ 
+                    color: 'error.main',
+                    '&:hover': {
+                      backgroundColor: 'rgba(211, 47, 47, 0.1)'
+                    }
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            </div>
           ) : (
             <Button
               onClick={handleFollowUser}
@@ -130,17 +168,25 @@ const Profile = () => {
             <div className="py-1 flex space-x-5">
               <div className="flex items-center text-gray-500">
                 <BusinessCenterSharp />
-                <p className="ml-2">Education</p>
+                <p className="ml-2">{auth.findUser?.education || "Education"}</p>
               </div>
               <div className="flex items-center text-gray-500">
                 <LocationOnIcon />
-                <p className="ml-2">{auth.findUser?.location}</p>
-              </div>
-              <div className="flex items-center text-gray-500">
-                <CalendarMonthIcon />
-                <p className="ml-2">Joined June 2022</p>
+                <p className="ml-2">{auth.findUser?.location || "Location"}</p>
               </div>
             </div>
+            {auth.findUser?.skills && (
+              <div className="flex items-center text-gray-500">
+                <p className="font-semibold">Skills: </p>
+                <p className="ml-2">{auth.findUser.skills}</p>
+              </div>
+            )}
+            {auth.findUser?.experience && (
+              <div className="flex items-center text-gray-500">
+                <p className="font-semibold">Experience: </p>
+                <p className="ml-2">{auth.findUser.experience}</p>
+              </div>
+            )}
             <div className="flex items-center space-x-5">
               <div className="flex items-center space-x-1 font-semibold">
                 <span>{auth.findUser?.followings.length}</span>

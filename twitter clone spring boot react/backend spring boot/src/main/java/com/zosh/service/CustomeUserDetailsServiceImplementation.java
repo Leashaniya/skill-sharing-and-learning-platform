@@ -28,13 +28,17 @@ public class CustomeUserDetailsServiceImplementation implements UserDetailsServi
 		
 		User user = userRepository.findByEmail(username);
 		
-		if(user == null || user.isLogin_with_google()) {
-			throw new UsernameNotFoundException("user not found with email "+username);
+		if (user == null) {
+			throw new UsernameNotFoundException("User not found");
+		}
+		
+		if (user.isLogin_with_google()) {
+			throw new UsernameNotFoundException("User not found");
 		}
 		
 		List<GrantedAuthority> authorities = new ArrayList<>();
 		
-		return new org.springframework.security.core.userdetails.User(user.getEmail(),user.getPassword(),authorities);
+		return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
 		
 	}
 

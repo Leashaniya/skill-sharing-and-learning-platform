@@ -40,6 +40,12 @@ public class UserDto {
     
     private String bio;
     
+    private String education;
+    
+    private String skills;
+    
+    private String experience;
+    
     private boolean req_user;
     
     private boolean login_with_google;

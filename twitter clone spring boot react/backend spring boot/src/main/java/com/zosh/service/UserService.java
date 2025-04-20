@@ -17,4 +17,6 @@ public interface UserService {
 	
 	public List<User> searchUser(String query);
 	
+	public void deleteUser(Long userId) throws UserException;
+	
 }

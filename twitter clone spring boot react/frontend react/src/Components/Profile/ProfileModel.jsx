@@ -46,14 +46,16 @@ const ProfileModel = ({ handleClose,open }) => {
       website: "",
       location: "",
       bio: "",
-      backgroundImage:"",
-      image:""
+      backgroundImage: "",
+      image: "",
+      education: "",
+      skills: "",
+      experience: ""
     },
     onSubmit: handleSubmit,
   });
 
-  useEffect(()=>{
-
+  useEffect(() => {
     formik.setValues({
       fullName: auth.user.fullName || "",
       website: auth.user.website || "",
@@ -61,9 +63,11 @@ const ProfileModel = ({ handleClose,open }) => {
       bio: auth.user.bio || "",
       backgroundImage: auth.user.backgroundImage || "",
       image: auth.user.image || "",
+      education: auth.user.education || "",
+      skills: auth.user.skills || "",
+      experience: auth.user.experience || ""
     });
-
-  },[auth.user])
+  }, [auth.user]);
 
   const handleImageChange=async(event)=>{
     setUploading(true)
@@ -183,28 +187,49 @@ const ProfileModel = ({ handleClose,open }) => {
                   label="Location"
                   value={formik.values.location}
                   onChange={formik.handleChange}
-                  error={
-                    formik.touched.location && Boolean(formik.errors.location)
-                  }
+                  error={formik.touched.location && Boolean(formik.errors.location)}
                   helperText={formik.touched.location && formik.errors.location}
                 />
+              
+                <div className="my-3">
+                  <p className="text-lg font-semibold mb-3">Professional Information</p>
+                  <TextField
+                    fullWidth
+                    id="education"
+                    name="education"
+                    label="Education"
+                    value={formik.values.education}
+                    onChange={formik.handleChange}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    id="skills"
+                    name="skills"
+                    label="Skills (comma separated)"
+                    value={formik.values.skills}
+                    onChange={formik.handleChange}
+                    helperText="Enter your skills separated by commas"
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    id="experience"
+                    name="experience"
+                    label="Experience"
+                    multiline
+                    rows={3}
+                    value={formik.values.experience}
+                    onChange={formik.handleChange}
+                    helperText="Describe your professional experience"
+                  />
+                </div>
               </div>
-               <div className="my-3">
-              <p className="text-lg">Birth date · Edit</p>
-              <p className="text-2xl"> October 26, 1999</p>
-
-            </div>
-            <p className="py-3 text-lg">
-                Edit Professional Profile
-            </p>
             </div>
             <BackdropComponent open={uploading}/>
-          
           </form>
         </Box>
-        
       </Modal>
-      
     </div>
   );
 };

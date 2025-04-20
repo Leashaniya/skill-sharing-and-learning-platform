@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import AddIcon from "@mui/icons-material/Add";
 import { Avatar, Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -11,6 +12,7 @@ import { createRetweet, deleteTweet, likeTweet, updateTweet } from "../../../../
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useLocation, useNavigate } from "react-router-dom";
 import ReplyModal from "./ReplyModal";
+import CreateLearningJourneyModal from "../../../LearningJourney/CreateLearningJourneyModal";
 
 const TwitCard = ({ twit }) => {
   const dispatch = useDispatch();
@@ -24,6 +26,7 @@ const TwitCard = ({ twit }) => {
   const [openReplyModel, setOpenReplyModel] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editedContent, setEditedContent] = useState(twit.content);
+  const [openLearningJourneyModal, setOpenLearningJourneyModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -75,6 +78,14 @@ const TwitCard = ({ twit }) => {
     setEditDialogOpen(false);
   };
 
+  const handleOpenLearningJourneyModal = () => {
+    setOpenLearningJourneyModal(true);
+  };
+
+  const handleCloseLearningJourneyModal = () => {
+    setOpenLearningJourneyModal(false);
+  };
+
   return (
     <div className="">
       {auth.user?.id !== twit.user.id &&
@@ -110,6 +121,12 @@ const TwitCard = ({ twit }) => {
               )}
             </div>
             <div>
+              <Button
+                onClick={handleOpenLearningJourneyModal}
+                sx={{ minWidth: 'auto', padding: '6px' }}
+              >
+                <AddIcon />
+              </Button>
               <Button
                 onClick={handleOpenMenu}
                 sx={{ minWidth: 'auto', padding: '6px' }}
@@ -229,6 +246,12 @@ const TwitCard = ({ twit }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <CreateLearningJourneyModal
+        open={openLearningJourneyModal}
+        handleClose={handleCloseLearningJourneyModal}
+        postContent={twit.content}
+      />
     </div>
   );
 };

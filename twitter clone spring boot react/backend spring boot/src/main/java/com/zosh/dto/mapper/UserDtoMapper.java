@@ -24,6 +24,9 @@ public class UserDtoMapper {
 		userDto.setLogin_with_google(user.isLogin_with_google());
 		userDto.setLocation(user.getLocation());
 		userDto.setVerified(UserUtil.isVerified(user.getVerification().getEndsAt()));
+		userDto.setEducation(user.getEducation());
+		userDto.setSkills(user.getSkills());
+		userDto.setExperience(user.getExperience());
 		
 		return userDto;
 	}

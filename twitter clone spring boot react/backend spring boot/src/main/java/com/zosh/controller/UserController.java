@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,6 +20,7 @@ import com.zosh.exception.UserException;
 import com.zosh.model.User;
 import com.zosh.service.UserService;
 import com.zosh.util.UserUtil;
+import com.zosh.dto.ApiResponseDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -112,5 +114,29 @@ private UserService userService;
 		return new ResponseEntity<>(userDto,HttpStatus.ACCEPTED);
 	}
 	
-
+	@DeleteMapping("/{userId}")
+	public ResponseEntity<ApiResponseDto> deleteUser(
+			@PathVariable Long userId,
+			@RequestHeader("Authorization") String jwt) throws UserException {
+		try {
+			// Validate the requesting user
+			User reqUser = userService.findUserProfileByJwt(jwt);
+			
+			// Check if the requesting user is trying to delete their own account
+			if (!reqUser.getId().equals(userId)) {
+				throw new UserException("You can only delete your own account");
+			}
+			
+			// Delete the user
+			userService.deleteUser(userId);
+			
+			// Return success response
+			ApiResponseDto res = new ApiResponseDto("User deleted successfully", true);
+			return new ResponseEntity<>(res, HttpStatus.OK);
+		} catch (UserException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new UserException("Error deleting user: " + e.getMessage());
+		}
+	}
 }
