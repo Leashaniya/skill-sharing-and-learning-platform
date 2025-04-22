@@ -83,8 +83,8 @@ const LearningJourney = () => {
       if (validJourneys.length > 0) {
         setJourneys(validJourneys);
       } else {
-        console.error('No valid journeys found in response:', response.data);
-        setError('No valid learning journeys found');
+        console.error('No learning journeys found:', response.data);
+        setError('No learning journeys found');
         setJourneys([]);
       }
     } catch (error) {
