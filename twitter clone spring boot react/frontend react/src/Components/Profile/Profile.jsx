@@ -34,7 +34,7 @@ const Profile = () => {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-    if (newValue === "4") {
+    if (newValue === "3") {
       dispatch(findPostsByLikesContainUser(param.id));
     } else if (newValue === "1") {
       dispatch(getUserPosts(param.id));
@@ -210,8 +210,7 @@ const Profile = () => {
               >
                 <Tab label="Posts" value="1" />
                 <Tab label="Replies" value="2" />
-                <Tab label="Media" value="3" />
-                <Tab label="Likes" value="4" />
+                <Tab label="Likes" value="3" />
               </TabList>
             </Box>
             <TabPanel value="1">
@@ -231,9 +230,6 @@ const Profile = () => {
               <div className="text-center text-gray-500 py-5">No replies yet</div>
             </TabPanel>
             <TabPanel value="3">
-              <div className="text-center text-gray-500 py-5">No media posts yet</div>
-            </TabPanel>
-            <TabPanel value="4">
               {!post.likedPosts || post.likedPosts.length === 0 ? (
                 <div className="text-center text-gray-500 py-5">
                   No liked posts yet
