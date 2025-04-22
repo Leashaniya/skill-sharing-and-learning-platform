@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.Data;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ForeignKey;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,6 +50,11 @@ public class Twit {
     private LocalDateTime createdAt;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "twit_images",
+        joinColumns = @JoinColumn(name = "twit_id"),
+        foreignKey = @ForeignKey(name = "FK_TWIT_IMAGES")
+    )
     @Column(name = "images")
     private List<String> images = new ArrayList<>(); 
     

@@ -24,8 +24,11 @@ import CommentIcon from '@mui/icons-material/Comment'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import CloseIcon from '@mui/icons-material/Close'
+import ImageIcon from '@mui/icons-material/Image'
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import { useDispatch, useSelector } from 'react-redux'
-import { likePost, deletePost, updatePost } from '../../../Store/Post/Action'
+import { likePost, deletePost, updatePost, getAllPosts, removeImageFromPost } from '../../../Store/Post/Action'
+import { uploadToCloudinary } from '../../../Utils/UploadToCloudinary'
 
 // Helper function to format relative time
 const getRelativeTime = (dateString) => {
@@ -47,6 +50,12 @@ const SkillPost = ({ post }) => {
     const [showComments, setShowComments] = useState(false);
     const [comment, setComment] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
+    const [editImages, setEditImages] = useState(post.images || []);
+    const [editVideo, setEditVideo] = useState(post.video || null);
+    const [editVideoDuration, setEditVideoDuration] = useState(post.videoDuration || 0);
+    const [newImages, setNewImages] = useState([]);
+    const [newVideo, setNewVideo] = useState(null);
+    const [uploadingMedia, setUploadingMedia] = useState(false);
     
     const isOwner = post.user?.id === auth.user?.id;
     const formattedDate = new Date(post.created_at).toLocaleString();
@@ -72,26 +81,207 @@ const SkillPost = ({ post }) => {
 
     const handleEdit = () => {
         setEditContent(post.content);
+        setEditImages(post.images || []);
+        setEditVideo(post.video || null);
+        setEditVideoDuration(post.videoDuration || 0);
+        setNewImages([]);
+        setNewVideo(null);
         setEditOpen(true);
     };
 
-    const handleUpdatePost = () => {
-        const formData = new FormData();
-        formData.append('content', editContent);
+    const handleNewImageSelect = (event) => {
+        const files = Array.from(event.target.files);
         
-        // Keep existing media
-        if (post.images) {
-            formData.append('images', JSON.stringify(post.images));
-        }
-        if (post.video) {
-            formData.append('video', post.video);
-            if (post.videoDuration) {
-                formData.append('videoDuration', post.videoDuration);
-            }
+        if (editVideo || newVideo) {
+            alert("You cannot upload both images and video in the same post");
+            return;
         }
 
-        dispatch(updatePost(post.id, formData));
-        setEditOpen(false);
+        // Check total number of images
+        if (editImages.length + newImages.length + files.length > 3) {
+            alert(`You can only upload up to 3 images per post`);
+            return;
+        }
+
+        // Validate each file
+        const validFiles = files.filter(file => {
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert(`${file.name} is not an image file`);
+                return false;
+            }
+
+            // Check file size
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`${file.name} is too large. Maximum file size is 10MB`);
+                return false;
+            }
+
+            return true;
+        });
+
+        if (validFiles.length > 0) {
+            setNewImages(prev => [...prev, ...validFiles]);
+        }
+        event.target.value = null;
+    };
+
+    const handleNewVideoSelect = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (editImages.length > 0 || newImages.length > 0) {
+            alert("You cannot upload both images and video in the same post");
+            event.target.value = null;
+            return;
+        }
+
+        // Check file type
+        if (!file.type.startsWith('video/')) {
+            alert("Please select a video file");
+            event.target.value = null;
+            return;
+        }
+
+        // Check file size
+        if (file.size > 10 * 1024 * 1024) {
+            alert("Video size should be less than 10MB");
+            event.target.value = null;
+            return;
+        }
+
+        try {
+            // Check video duration
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = function() {
+                    window.URL.revokeObjectURL(video.src);
+                    if (video.duration > 30) {
+                        reject(new Error("Video duration must not exceed 30 seconds"));
+                    }
+                    setEditVideoDuration(video.duration);
+                    resolve();
+                };
+                
+                video.src = URL.createObjectURL(file);
+            });
+            
+            setNewVideo(file);
+        } catch (error) {
+            alert(error.message);
+        }
+        event.target.value = null;
+    };
+
+    const removeEditImage = async (index, isNewImage) => {
+        try {
+            if (isNewImage) {
+                setNewImages(prev => {
+                    const updated = prev.filter((_, i) => i !== index);
+                    return updated;
+                });
+            } else {
+                const imageToRemove = editImages[index];
+                const response = await dispatch(removeImageFromPost(post.id, imageToRemove));
+                
+                if (response.success) {
+                    setEditImages(prev => {
+                        const updated = prev.filter((_, i) => i !== index);
+                        return updated;
+                    });
+                } else {
+                    alert(response.error || 'Failed to remove image. Please try again.');
+                }
+            }
+        } catch (error) {
+            console.error("Error removing image:", error);
+            alert('An error occurred while removing the image. Please try again.');
+        }
+    };
+
+    const removeEditVideo = () => {
+        setEditVideo(null);
+        setNewVideo(null);
+        setEditVideoDuration(0);
+    };
+
+    const handleUpdatePost = async () => {
+        try {
+            setUploadingMedia(true);
+            
+            const formData = new FormData();
+            formData.append('content', editContent);
+            
+            // Check if we're only updating the description (no changes to media)
+            const hasMediaChanges = 
+                newImages.length > 0 || // New images being added
+                newVideo !== null || // New video being added
+                (post.images?.length !== editImages.length); // Images were removed
+            
+            if (!hasMediaChanges) {
+                // If we're only updating the description, don't send any media parameters
+                // This will preserve existing media
+                console.log("Description-only update, preserving existing media");
+            } else {
+                // Handle existing images and new images together
+                const allImages = [...editImages];
+                
+                // Upload and add new images
+                if (newImages.length > 0) {
+                    const uploadPromises = newImages.map(image => 
+                        uploadToCloudinary(image, "image")
+                    );
+                    const newImageUrls = await Promise.all(uploadPromises);
+                    allImages.push(...newImageUrls);
+                }
+                
+                // Only append images if we have any (either existing or new)
+                if (allImages.length > 0) {
+                    allImages.forEach(image => formData.append('images', image));
+                }
+                
+                // Handle video
+                if (editVideo) {
+                    formData.append('video', editVideo);
+                    if (editVideoDuration) {
+                        formData.append('videoDuration', editVideoDuration);
+                    }
+                } else if (newVideo) {
+                    const videoUrl = await uploadToCloudinary(newVideo, "video");
+                    formData.append('video', videoUrl);
+                    formData.append('videoDuration', editVideoDuration);
+                }
+            }
+
+            console.log("Sending update with formData:");
+            for (let pair of formData.entries()) {
+                console.log(pair[0], ':', pair[1]);
+            }
+
+            const response = await dispatch(updatePost(post.id, formData));
+            
+            if (response && response.success) {
+                console.log("Post updated successfully:", response.data);
+                
+                // Force a refresh of the posts to ensure UI is updated
+                dispatch(getAllPosts());
+                
+                // Close the edit dialog
+                setEditOpen(false);
+                
+                // Show success message
+                alert("Post updated successfully!");
+            } else {
+                throw new Error(response?.error || "Failed to update post");
+            }
+        } catch (error) {
+            console.error("Error updating post:", error);
+            alert(error.message || 'An error occurred while updating the post. Please try again.');
+        } finally {
+            setUploadingMedia(false);
+        }
     };
 
     const handleImageClick = (image) => {
@@ -242,15 +432,151 @@ const SkillPost = ({ post }) => {
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                     />
+                    
+                    {/* Display existing images */}
+                    {editImages.length > 0 && (
+                        <div className="mt-4 grid grid-cols-3 gap-4">
+                            {editImages.map((image, index) => (
+                                <div key={`existing-${index}`} className="relative">
+                                    <img
+                                        src={image}
+                                        alt={`Existing ${index + 1}`}
+                                        className="w-full h-32 object-cover rounded-lg"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            removeEditImage(index, false);
+                                        }}
+                                        className="absolute top-1 right-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                        title="Remove image"
+                                    >
+                                        <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {/* Display new images */}
+                    {newImages.length > 0 && (
+                        <div className="mt-4 grid grid-cols-3 gap-4">
+                            {newImages.map((image, index) => (
+                                <div key={`new-${index}`} className="relative">
+                                    <img
+                                        src={URL.createObjectURL(image)}
+                                        alt={`New ${index + 1}`}
+                                        className="w-full h-32 object-cover rounded-lg"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            removeEditImage(index, true);
+                                        }}
+                                        className="absolute top-1 right-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                        title="Remove image"
+                                    >
+                                        <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {/* Display existing video */}
+                    {editVideo && (
+                        <div className="mt-4 relative">
+                            <video
+                                src={editVideo}
+                                className="w-full max-h-96 rounded-lg"
+                                controls
+                            />
+                            <div className="absolute top-2 right-2 flex items-center space-x-2">
+                                <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded">
+                                    {editVideoDuration.toFixed(1)}s
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        removeEditVideo();
+                                    }}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                    title="Remove video"
+                                >
+                                    <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Display new video */}
+                    {newVideo && (
+                        <div className="mt-4 relative">
+                            <video
+                                src={URL.createObjectURL(newVideo)}
+                                className="w-full max-h-96 rounded-lg"
+                                controls
+                            />
+                            <div className="absolute top-2 right-2 flex items-center space-x-2">
+                                <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded">
+                                    {editVideoDuration.toFixed(1)}s
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        removeEditVideo();
+                                    }}
+                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                    title="Remove video"
+                                >
+                                    <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Media upload buttons */}
+                    <div className="flex space-x-5 items-center mt-4">
+                        <label className="flex items-center space-x-2 rounded-md cursor-pointer" title="Upload up to 3 images">
+                            <ImageIcon className="text-[#1d9bf0]" />
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleNewImageSelect}
+                                disabled={editVideo !== null || newVideo !== null}
+                            />
+                            <span className="text-sm text-gray-500">{`(${editImages.length + newImages.length}/3)`}</span>
+                        </label>
+                        <label className="flex items-center space-x-2 rounded-md cursor-pointer" title="Upload video (max 30s)">
+                            <VideoLibraryIcon className="text-[#1d9bf0]" />
+                            <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                onChange={handleNewVideoSelect}
+                                disabled={editImages.length > 0 || newImages.length > 0}
+                            />
+                        </label>
+                    </div>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setEditOpen(false)}>Cancel</Button>
                     <Button 
                         onClick={handleUpdatePost}
                         variant="contained"
-                        disabled={!editContent.trim() || editContent === post.content}
+                        disabled={uploadingMedia}
                     >
-                        Update
+                        {uploadingMedia ? "Updating..." : "Update"}
                     </Button>
                 </DialogActions>
             </Dialog>

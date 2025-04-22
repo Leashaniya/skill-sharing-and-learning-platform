@@ -30,8 +30,9 @@ public interface TwitService {
 	
 	public List<Twit> findByLikesContainsUser(User user);
 	
-	public Twit updateTwit(Twit twit) throws TwitException;
+	public Twit updateTwit(Long twitId, Twit twit) throws TwitException, UserException;
 	
+	public Twit removeImageFromTwit(Long twitId, String imageUrl) throws TwitException;
 	
 
 }

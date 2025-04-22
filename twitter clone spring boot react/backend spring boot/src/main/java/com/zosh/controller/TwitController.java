@@ -156,46 +156,63 @@ public class TwitController {
 	public ResponseEntity<TwitDto> updateTwit(
 			@PathVariable Long twitId,
 			@RequestParam("content") String content,
-			@RequestParam(value = "images", required = false) List<MultipartFile> images,
-			@RequestParam(value = "video", required = false) MultipartFile video,
+			@RequestParam(value = "images", required = false) List<String> images,
+			@RequestParam(value = "video", required = false) String video,
 			@RequestHeader("Authorization") String jwt) throws UserException, TwitException, IOException {
+		
+		User user = userService.findUserProfileByJwt(jwt);
+		
+		// Create a new Twit object with updated content
+		Twit req = new Twit();
+		req.setContent(content);
+		
+		// For description-only updates, don't set the images field at all
+		if (images != null) {
+			req.setImages(new ArrayList<>(images));
+		}
+		
+		// Handle video similarly
+		if (video != null) {
+			req.setVideo(video);
+		}
+		
+		// Log the update request details
+		System.out.println("Updating twit " + twitId + " with content: " + content);
+		System.out.println("Images in update request: " + (images != null ? images : "null"));
+		System.out.println("Video in update request: " + (video != null ? video : "null"));
+		
+		// Call the service method with the new signature
+		Twit updatedTwit = twitService.updateTwit(twitId, req);
+		
+		TwitDto twitDto = TwitDtoMapper.toTwitDto(updatedTwit, user);
+		return new ResponseEntity<>(twitDto, HttpStatus.OK);
+	}
+	
+	@DeleteMapping("/{twitId}/images")
+	public ResponseEntity<TwitDto> removeImageFromTwit(
+			@PathVariable Long twitId,
+			@RequestParam("imageUrl") String imageUrl,
+			@RequestHeader("Authorization") String jwt) throws UserException, TwitException {
 		
 		User user = userService.findUserProfileByJwt(jwt);
 		Twit existingTwit = twitService.findById(twitId);
 		
 		if (!existingTwit.getUser().getId().equals(user.getId())) {
-			throw new TwitException("You can only edit your own posts");
+			throw new TwitException("You can only remove images from your own posts");
 		}
 		
-		existingTwit.setContent(content);
+		// Remove the image from the twit
+		Twit updatedTwit = twitService.removeImageFromTwit(twitId, imageUrl);
 		
-		// Handle image upload and deletion of old images
-		if (images != null && !images.isEmpty()) {
-			List<String> imageUrls = new ArrayList<>();
-			for (MultipartFile image : images) {
-				if (existingTwit.getImages() != null && !existingTwit.getImages().isEmpty()) {
-					for (String oldImage : existingTwit.getImages()) {
-						cloudinaryService.deleteImage(oldImage);
-					}
-				}
-				String imageUrl = cloudinaryService.uploadImage(image);
-				imageUrls.add(imageUrl);
-			}
-			existingTwit.setImages(imageUrls);
+		// Delete the image from Cloudinary
+		try {
+			cloudinaryService.deleteImage(imageUrl);
+		} catch (Exception e) {
+			// Log the error but don't fail the request
+			System.err.println("Failed to delete image from Cloudinary: " + e.getMessage());
 		}
 		
-		// Handle video upload and deletion of old video
-		if (video != null && !video.isEmpty()) {
-			if (existingTwit.getVideo() != null) {
-				cloudinaryService.deleteImage(existingTwit.getVideo());
-			}
-			String videoUrl = cloudinaryService.uploadImage(video);
-			existingTwit.setVideo(videoUrl);
-		}
-		
-		Twit updatedTwit = twitService.updateTwit(existingTwit);
 		TwitDto twitDto = TwitDtoMapper.toTwitDto(updatedTwit, user);
-		
 		return new ResponseEntity<>(twitDto, HttpStatus.OK);
 	}
 }

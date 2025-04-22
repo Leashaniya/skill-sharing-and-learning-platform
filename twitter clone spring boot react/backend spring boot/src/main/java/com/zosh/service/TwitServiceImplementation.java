@@ -8,6 +8,7 @@ import org.springdoc.core.converters.models.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.Hibernate;
 
 import com.zosh.exception.TwitException;
 import com.zosh.exception.UserException;
@@ -148,14 +149,72 @@ public class TwitServiceImplementation implements TwitService {
 	}
 	
 	@Override
-	public Twit updateTwit(Twit twit) throws TwitException {
-		Twit existingTwit = findById(twit.getId());
-		existingTwit.setContent(twit.getContent());
-		existingTwit.setImages(twit.getImages() != null ? twit.getImages() : new ArrayList<>());
-		existingTwit.setVideo(twit.getVideo());
-		return twitRepository.save(existingTwit);
+	@Transactional
+	public Twit updateTwit(Long twitId, Twit req) throws TwitException, UserException {
+		Twit twit = findById(twitId);
+		if (twit == null) {
+			throw new TwitException("Twit not found with id: " + twitId);
+		}
+		
+		// Update content if provided
+		if (req.getContent() != null) {
+			twit.setContent(req.getContent());
+		}
+		
+		// Handle image updates only if new images are provided
+		if (req.getImages() != null && !req.getImages().isEmpty()) {
+			// Get current images before updating
+			List<String> currentImages = twitRepository.findImagesByTwitId(twitId);
+			System.out.println("Current images in database: " + currentImages);
+			
+			// Clear existing images from the twit_images table
+			twitRepository.deleteAllTwitImages(twitId);
+			
+			// Add each image to the twit_images table
+			for (String image : req.getImages()) {
+				System.out.println("Adding image to database: " + image);
+				twitRepository.addTwitImage(twitId, image);
+			}
+			
+			// Update the images list in the twit entity
+			twit.setImages(req.getImages());
+		}
+		// If no images provided in request, keep existing images
+		
+		// Update video if provided
+		if (req.getVideo() != null) {
+			twit.setVideo(req.getVideo());
+		}
+		
+		// Save the updated twit
+		Twit updatedTwit = twitRepository.save(twit);
+		
+		// Force reload images from database to ensure we have the latest state
+		List<String> currentImages = twitRepository.findImagesByTwitId(twitId);
+		updatedTwit.setImages(currentImages);
+		System.out.println("Final images after update: " + currentImages);
+		
+		// Force initialize other collections
+		Hibernate.initialize(updatedTwit.getLikes());
+		Hibernate.initialize(updatedTwit.getRetwitUser());
+		Hibernate.initialize(updatedTwit.getReplyTwits());
+		
+		return updatedTwit;
 	}
 	
-	
+	@Override
+	@Transactional
+	public Twit removeImageFromTwit(Long twitId, String imageUrl) throws TwitException {
+		Twit twit = findById(twitId);
+		
+		// Remove the image from the list
+		if (twit.getImages() != null) {
+			twit.getImages().remove(imageUrl);
+			// Force a save to ensure the image is removed from the twit_images table
+			twitRepository.save(twit);
+		}
+		
+		return twit;
+	}
 
 }

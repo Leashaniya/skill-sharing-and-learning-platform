@@ -167,10 +167,66 @@ export const deletePost = (postId) => async (dispatch) => {
 
 export const updatePost = (postId, postData) => async (dispatch) => {
     try {
-        const { data } = await api.put(`/api/twits/${postId}`, postData);
+        console.log("Updating post with ID:", postId);
+        
+        // Create a new FormData instance
+        const formData = new FormData();
+        
+        // Add content
+        formData.append('content', postData.get('content'));
+        
+        // Handle images - if it's a JSON string, parse it and add each image separately
+        const images = postData.get('images');
+        if (images) {
+            try {
+                // Try to parse as JSON first
+                const imageArray = JSON.parse(images);
+                if (Array.isArray(imageArray)) {
+                    imageArray.forEach((image, index) => {
+                        formData.append(`images[${index}]`, image);
+                    });
+                }
+            } catch (e) {
+                // If not JSON, treat as single image
+                formData.append('images[0]', images);
+            }
+        }
+        
+        // Handle video
+        const video = postData.get('video');
+        if (video) {
+            formData.append('video', video);
+            const videoDuration = postData.get('videoDuration');
+            if (videoDuration) {
+                formData.append('videoDuration', videoDuration);
+            }
+        }
+
+        console.log("Sending update with processed FormData:");
+        for (let pair of formData.entries()) {
+            console.log(pair[0], ':', pair[1]);
+        }
+        
+        const { data } = await api.put(`/api/twits/${postId}`, formData);
+        console.log("Update response:", data);
+        
+        if (!data) {
+            throw new Error("No data received from server");
+        }
+        
+        // First update the specific post in the state
         dispatch({ type: UPDATE_POST, payload: data });
+        
+        // Then refresh the entire posts list to ensure consistency
+        await dispatch(getAllPosts());
+        
+        return { success: true, data };
     } catch (error) {
         console.error("Error updating post:", error.response?.data || error.message);
+        return { 
+            success: false, 
+            error: error.response?.data?.message || error.message || "Failed to update post" 
+        };
     }
 };
 
@@ -181,5 +237,28 @@ export const addComment = (postId, comment) => async (dispatch) => {
         dispatch(getAllPosts());
     } catch (error) {
         console.error("Error adding comment:", error.response?.data || error.message);
+    }
+};
+
+export const removeImageFromPost = (postId, imageUrl) => async (dispatch) => {
+    try {
+        console.log("Removing image from post:", postId, imageUrl);
+        
+        const { data } = await api.delete(`/api/twits/${postId}/images?imageUrl=${encodeURIComponent(imageUrl)}`);
+        console.log("Image removal response:", data);
+        
+        // Update the specific post in the state
+        dispatch({ type: UPDATE_POST, payload: data });
+        
+        // Refresh the posts list to ensure consistency
+        await dispatch(getAllPosts());
+        
+        return { success: true, data };
+    } catch (error) {
+        console.error("Error removing image:", error.response?.data || error.message);
+        return { 
+            success: false, 
+            error: error.response?.data?.message || error.message || "Failed to remove image" 
+        };
     }
 }; 
