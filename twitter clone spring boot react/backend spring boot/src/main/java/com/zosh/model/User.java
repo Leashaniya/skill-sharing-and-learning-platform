@@ -67,6 +67,8 @@ public class User {
     private boolean login_with_google;
     
     private boolean is_req_user=false;
+
+    private boolean is_private_account = false;
     
 //    @ManyToMany(mappedBy = "retwitUser",cascade = CascadeType.ALL)
 //    private List<Twit> retwits = new ArrayList<>();

@@ -157,9 +157,12 @@ public class AuthController {
 			String fullName = user.getFullName();
 			String birthDate = user.getBirthDate();
 			
+			System.out.println("Signup attempt - Email: " + email + ", FullName: " + fullName + ", BirthDate: " + birthDate);
+			
 			User isEmailExist = userRepository.findByEmail(email);
 			
 			if (isEmailExist != null) {
+				System.out.println("Email already exists: " + email);
 				throw new UserException("Email Is Already Used With Another Account");
 			}
 
@@ -171,7 +174,14 @@ public class AuthController {
 			createdUser.setBirthDate(birthDate);
 			createdUser.setVerification(new Varification());
 			
-			userRepository.save(createdUser);
+			try {
+				userRepository.save(createdUser);
+				System.out.println("User created successfully: " + email);
+			} catch (Exception e) {
+				System.err.println("Error saving user to database: " + e.getMessage());
+				e.printStackTrace();
+				throw e;
+			}
 			
 			AuthResponse authResponse = new AuthResponse();
 			authResponse.setStatus(true);
@@ -179,14 +189,17 @@ public class AuthController {
 			
 			return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.OK);
 		} catch (UserException e) {
+			System.err.println("UserException during signup: " + e.getMessage());
 			AuthResponse authResponse = new AuthResponse();
 			authResponse.setStatus(false);
 			authResponse.setMessage(e.getMessage());
 			return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
+			System.err.println("Unexpected error during signup: " + e.getMessage());
+			e.printStackTrace();
 			AuthResponse authResponse = new AuthResponse();
 			authResponse.setStatus(false);
-			authResponse.setMessage("An error occurred during registration");
+			authResponse.setMessage("An error occurred during registration: " + e.getMessage());
 			return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
