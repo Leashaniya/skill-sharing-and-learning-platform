@@ -65,6 +65,11 @@ const HomeSection = () => {
 
   const handleSubmit = async (values, actions) => {
     try {
+      // Check if content is empty and no media is selected
+      if (!values.content.trim() && selectedImages.length === 0 && !selectedVideo) {
+        return;
+      }
+
       if (!values.content.trim()) {
         alert("Please enter a description");
         return;
@@ -225,13 +230,27 @@ const HomeSection = () => {
     event.target.value = null;
   };
 
-  const removeImage = (index) => {
+  const removeImage = (index, e) => {
+    // Prevent event propagation to avoid form submission
+    e.preventDefault();
+    e.stopPropagation();
+    
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Only reset form if this was the last image
+    if (selectedImages.length === 1) {
+      formik.resetForm();
+    }
   };
 
-  const removeVideo = () => {
+  const removeVideo = (e) => {
+    // Prevent event propagation to avoid form submission
+    e.preventDefault();
+    e.stopPropagation();
+    
     setSelectedVideo(null);
     setVideoDuration(0);
+    formik.resetForm();
   };
 
   const formik = useFormik({
@@ -287,7 +306,8 @@ const HomeSection = () => {
                               className="w-full h-32 object-cover rounded-lg"
                             />
                             <button
-                              onClick={() => removeImage(index)}
+                              type="button"
+                              onClick={(e) => removeImage(index, e)}
                               className="absolute top-1 right-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
                               title="Remove image"
                             >
@@ -311,7 +331,8 @@ const HomeSection = () => {
                             {videoDuration.toFixed(1)}s
                           </span>
                           <button
-                            onClick={removeVideo}
+                            type="button"
+                            onClick={(e) => removeVideo(e)}
                             className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
                             title="Remove video"
                           >
