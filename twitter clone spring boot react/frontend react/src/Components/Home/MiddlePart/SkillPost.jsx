@@ -32,14 +32,27 @@ import { uploadToCloudinary } from '../../../Utils/UploadToCloudinary'
 
 // Helper function to format relative time
 const getRelativeTime = (dateString) => {
-    const now = new Date();
+    if (!dateString) return 'Just now';
+    
+    // Parse the date string from the backend
     const postDate = new Date(dateString);
+    const now = new Date();
+    
+    // Check if the date is valid
+    if (isNaN(postDate.getTime())) {
+        console.error('Invalid date:', dateString);
+        return 'Just now';
+    }
+    
     const diffInSeconds = Math.floor((now - postDate) / 1000);
     
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)}w ago`;
+    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
+    return `${Math.floor(diffInSeconds / 31536000)}y ago`;
 };
 
 const SkillPost = ({ post }) => {
@@ -57,8 +70,14 @@ const SkillPost = ({ post }) => {
     const [newVideo, setNewVideo] = useState(null);
     const [uploadingMedia, setUploadingMedia] = useState(false);
     
+    // Debug logging for date
+    console.log('Post createdAt:', post.createdAt);
+    console.log('Post createdAt type:', typeof post.createdAt);
+    console.log('Post createdAt parsed:', new Date(post.createdAt));
+    
     const isOwner = post.user?.id === auth.user?.id;
-    const formattedDate = new Date(post.created_at).toLocaleString();
+    const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now';
+    const relativeTime = getRelativeTime(post.createdAt);
     const isLiked = post.likes?.some(like => like.id === auth.user?.id);
 
     const handleLike = () => {
@@ -220,11 +239,7 @@ const SkillPost = ({ post }) => {
                 newVideo !== null || // New video being added
                 (post.images?.length !== editImages.length); // Images were removed
             
-            if (!hasMediaChanges) {
-                // If we're only updating the description, don't send any media parameters
-                // This will preserve existing media
-                console.log("Description-only update, preserving existing media");
-            } else {
+            if (hasMediaChanges) {
                 // Handle existing images and new images together
                 const allImages = [...editImages];
                 
@@ -312,7 +327,7 @@ const SkillPost = ({ post }) => {
                         <div className={theme.currentTheme === "dark" ? "text-gray-400" : "text-gray-500"}>
                             <span>@{post.user?.fullName?.split(" ").join("_").toLowerCase() || 'anonymous'}</span>
                             <span className="mx-1">·</span>
-                            <span title={formattedDate}>{getRelativeTime(post.created_at)}</span>
+                            <span title={formattedDate}>{relativeTime}</span>
                         </div>
                     }
                     action={
