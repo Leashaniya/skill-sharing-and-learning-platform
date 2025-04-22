@@ -19,15 +19,19 @@ import com.zosh.request.TwitReplyRequest;
 import com.zosh.request.TwitRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zosh.model.LearningJourney;
+import com.zosh.repository.LearningJourneyRepository;
 
 @Service
 @Transactional
 public class TwitServiceImplementation implements TwitService {
 	
 	private TwitRepository twitRepository;
+	private LearningJourneyRepository learningJourneyRepository;
 	
-	public TwitServiceImplementation(TwitRepository twitRepository) {
+	public TwitServiceImplementation(TwitRepository twitRepository, LearningJourneyRepository learningJourneyRepository) {
 		this.twitRepository=twitRepository;
+		this.learningJourneyRepository = learningJourneyRepository;
 	}
 
 	@Override
@@ -72,13 +76,31 @@ public class TwitServiceImplementation implements TwitService {
 	}
 
 	@Override
+	@Transactional
 	public void deleteTwitById(Long twitId, Long userId) throws TwitException, UserException {
-		Twit twit = findById(twitId);
-		
-		if(!userId.equals(twit.getUser().getId())) {
-			throw new UserException("you can't delete another users twit");
+		try {
+			Twit twit = findById(twitId);
+			
+			if(!userId.equals(twit.getUser().getId())) {
+				throw new UserException("you can't delete another users twit");
+			}
+			
+			// First explicitly delete all associated learning journeys
+			List<LearningJourney> learningJourneys = learningJourneyRepository.findByPostId(twitId);
+			if (learningJourneys != null && !learningJourneys.isEmpty()) {
+				for (LearningJourney journey : learningJourneys) {
+					learningJourneyRepository.delete(journey);
+				}
+				// Flush to ensure learning journeys are deleted
+				learningJourneyRepository.flush();
+			}
+			
+			// Then delete the twit
+			twitRepository.deleteById(twit.getId());
+			
+		} catch (Exception e) {
+			throw new TwitException("Error deleting twit: " + e.getMessage());
 		}
-		twitRepository.deleteById(twit.getId());
 	}
 
 	@Override
@@ -151,10 +173,15 @@ public class TwitServiceImplementation implements TwitService {
 	}
 	
 	@Override
+	@Transactional
 	public Twit updateTwit(Long twitId, String content, String images, String video, String videoDuration, User user) throws TwitException, UserException {
-		Twit twit = findById(twitId);
-		
-		if (twit.getUser().getId().equals(user.getId())) {
+		try {
+			Twit twit = findById(twitId);
+			
+			if (!twit.getUser().getId().equals(user.getId())) {
+				throw new UserException("You can't update another user's twit");
+			}
+
 			if (content != null) {
 				twit.setContent(content);
 			}
@@ -186,8 +213,9 @@ public class TwitServiceImplementation implements TwitService {
 			}
 			
 			return twitRepository.save(twit);
+		} catch (Exception e) {
+			throw new TwitException("Error updating twit: " + e.getMessage());
 		}
-		throw new UserException("You can't update another user's twit");
 	}
 	
 	@Override
