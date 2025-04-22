@@ -233,41 +233,34 @@ const SkillPost = ({ post }) => {
             const formData = new FormData();
             formData.append('content', editContent);
             
-            // Check if we're only updating the description (no changes to media)
-            const hasMediaChanges = 
-                newImages.length > 0 || // New images being added
-                newVideo !== null || // New video being added
-                (post.images?.length !== editImages.length); // Images were removed
+            // Handle existing images and new images together
+            const allImages = [...editImages];
             
-            if (hasMediaChanges) {
-                // Handle existing images and new images together
-                const allImages = [...editImages];
-                
-                // Upload and add new images
-                if (newImages.length > 0) {
-                    const uploadPromises = newImages.map(image => 
-                        uploadToCloudinary(image, "image")
-                    );
-                    const newImageUrls = await Promise.all(uploadPromises);
-                    allImages.push(...newImageUrls);
-                }
-                
-                // Only append images if we have any (either existing or new)
-                if (allImages.length > 0) {
-                    allImages.forEach(image => formData.append('images', image));
-                }
-                
-                // Handle video
-                if (editVideo) {
-                    formData.append('video', editVideo);
-                    if (editVideoDuration) {
-                        formData.append('videoDuration', editVideoDuration);
-                    }
-                } else if (newVideo) {
-                    const videoUrl = await uploadToCloudinary(newVideo, "video");
-                    formData.append('video', videoUrl);
+            // Upload and add new images
+            if (newImages.length > 0) {
+                const uploadPromises = newImages.map(image => 
+                    uploadToCloudinary(image, "image")
+                );
+                const newImageUrls = await Promise.all(uploadPromises);
+                allImages.push(...newImageUrls);
+            }
+            
+            // Always send the complete list of images
+            if (allImages.length > 0) {
+                // Convert the array to a JSON string to ensure proper serialization
+                formData.append('images', JSON.stringify(allImages));
+            }
+            
+            // Handle video
+            if (editVideo) {
+                formData.append('video', editVideo);
+                if (editVideoDuration) {
                     formData.append('videoDuration', editVideoDuration);
                 }
+            } else if (newVideo) {
+                const videoUrl = await uploadToCloudinary(newVideo, "video");
+                formData.append('video', videoUrl);
+                formData.append('videoDuration', editVideoDuration);
             }
 
             console.log("Sending update with formData:");
@@ -284,7 +277,7 @@ const SkillPost = ({ post }) => {
                 dispatch(getAllPosts());
                 
                 // Close the edit dialog
-                setEditOpen(false);
+        setEditOpen(false);
                 
                 // Show success message
                 alert("Post updated successfully!");

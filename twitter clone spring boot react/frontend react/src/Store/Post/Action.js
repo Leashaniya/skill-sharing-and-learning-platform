@@ -175,21 +175,10 @@ export const updatePost = (postId, postData) => async (dispatch) => {
         // Add content
         formData.append('content', postData.get('content'));
         
-        // Handle images - if it's a JSON string, parse it and add each image separately
+        // Handle images - keep the JSON string as is
         const images = postData.get('images');
         if (images) {
-            try {
-                // Try to parse as JSON first
-                const imageArray = JSON.parse(images);
-                if (Array.isArray(imageArray)) {
-                    imageArray.forEach((image, index) => {
-                        formData.append(`images[${index}]`, image);
-                    });
-                }
-            } catch (e) {
-                // If not JSON, treat as single image
-                formData.append('images[0]', images);
-            }
+            formData.append('images', images);
         }
         
         // Handle video
@@ -202,24 +191,22 @@ export const updatePost = (postId, postData) => async (dispatch) => {
             }
         }
 
-        console.log("Sending update with processed FormData:");
+        console.log("Sending update with formData:");
         for (let pair of formData.entries()) {
             console.log(pair[0], ':', pair[1]);
         }
-        
+
         const { data } = await api.put(`/api/twits/${postId}`, formData);
         console.log("Update response:", data);
         
         if (!data) {
             throw new Error("No data received from server");
         }
-        
-        // First update the specific post in the state
+
         dispatch({ type: UPDATE_POST, payload: data });
         
-        // Then refresh the entire posts list to ensure consistency
+        // Refresh the posts feed
         await dispatch(getAllPosts());
-        
         return { success: true, data };
     } catch (error) {
         console.error("Error updating post:", error.response?.data || error.message);

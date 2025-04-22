@@ -17,6 +17,8 @@ import com.zosh.model.User;
 import com.zosh.repository.TwitRepository;
 import com.zosh.request.TwitReplyRequest;
 import com.zosh.request.TwitRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @Transactional
@@ -149,57 +151,43 @@ public class TwitServiceImplementation implements TwitService {
 	}
 	
 	@Override
-	@Transactional
-	public Twit updateTwit(Long twitId, Twit req) throws TwitException, UserException {
+	public Twit updateTwit(Long twitId, String content, String images, String video, String videoDuration, User user) throws TwitException, UserException {
 		Twit twit = findById(twitId);
-		if (twit == null) {
-			throw new TwitException("Twit not found with id: " + twitId);
-		}
 		
-		// Update content if provided
-		if (req.getContent() != null) {
-			twit.setContent(req.getContent());
-		}
-		
-		// Handle image updates only if new images are provided
-		if (req.getImages() != null && !req.getImages().isEmpty()) {
-			// Get current images before updating
-			List<String> currentImages = twitRepository.findImagesByTwitId(twitId);
-			System.out.println("Current images in database: " + currentImages);
-			
-			// Clear existing images from the twit_images table
-			twitRepository.deleteAllTwitImages(twitId);
-			
-			// Add each image to the twit_images table
-			for (String image : req.getImages()) {
-				System.out.println("Adding image to database: " + image);
-				twitRepository.addTwitImage(twitId, image);
+		if (twit.getUser().getId().equals(user.getId())) {
+			if (content != null) {
+				twit.setContent(content);
 			}
 			
-			// Update the images list in the twit entity
-			twit.setImages(req.getImages());
+			// Handle images update
+			if (images != null) {
+				try {
+					// Parse the JSON array of images
+					List<String> imageList = new ObjectMapper().readValue(images, new TypeReference<List<String>>() {});
+					
+					// Clear existing images
+					twit.getImages().clear();
+					
+					// Add new images
+					if (imageList != null && !imageList.isEmpty()) {
+						twit.getImages().addAll(imageList);
+					}
+				} catch (Exception e) {
+					throw new TwitException("Error parsing images JSON: " + e.getMessage());
+				}
+			}
+			
+			// Handle video update
+			if (video != null) {
+				twit.setVideo(video);
+				if (videoDuration != null) {
+					twit.setVideoDuration(videoDuration);
+				}
+			}
+			
+			return twitRepository.save(twit);
 		}
-		// If no images provided in request, keep existing images
-		
-		// Update video if provided
-		if (req.getVideo() != null) {
-			twit.setVideo(req.getVideo());
-		}
-		
-		// Save the updated twit
-		Twit updatedTwit = twitRepository.save(twit);
-		
-		// Force reload images from database to ensure we have the latest state
-		List<String> currentImages = twitRepository.findImagesByTwitId(twitId);
-		updatedTwit.setImages(currentImages);
-		System.out.println("Final images after update: " + currentImages);
-		
-		// Force initialize other collections
-		Hibernate.initialize(updatedTwit.getLikes());
-		Hibernate.initialize(updatedTwit.getRetwitUser());
-		Hibernate.initialize(updatedTwit.getReplyTwits());
-		
-		return updatedTwit;
+		throw new UserException("You can't update another user's twit");
 	}
 	
 	@Override

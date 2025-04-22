@@ -60,6 +60,8 @@ public class Twit {
     
     private String video;
 
+    private String videoDuration;
+
     private boolean isReply;
     private boolean isTwit;
     private boolean is_liked = false;

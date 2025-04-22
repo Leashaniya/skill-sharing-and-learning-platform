@@ -153,39 +153,17 @@ public class TwitController {
 	}
 	
 	@PutMapping("/{twitId}")
-	public ResponseEntity<TwitDto> updateTwit(
+	public ResponseEntity<Twit> updateTwit(
 			@PathVariable Long twitId,
-			@RequestParam("content") String content,
-			@RequestParam(value = "images", required = false) List<String> images,
-			@RequestParam(value = "video", required = false) String video,
-			@RequestHeader("Authorization") String jwt) throws UserException, TwitException, IOException {
+			@RequestParam(required = false) String content,
+			@RequestParam(required = false) String images,
+			@RequestParam(required = false) String video,
+			@RequestParam(required = false) String videoDuration,
+			@RequestHeader("Authorization") String jwt) throws Exception {
 		
 		User user = userService.findUserProfileByJwt(jwt);
-		
-		// Create a new Twit object with updated content
-		Twit req = new Twit();
-		req.setContent(content);
-		
-		// For description-only updates, don't set the images field at all
-		if (images != null) {
-			req.setImages(new ArrayList<>(images));
-		}
-		
-		// Handle video similarly
-		if (video != null) {
-			req.setVideo(video);
-		}
-		
-		// Log the update request details
-		System.out.println("Updating twit " + twitId + " with content: " + content);
-		System.out.println("Images in update request: " + (images != null ? images : "null"));
-		System.out.println("Video in update request: " + (video != null ? video : "null"));
-		
-		// Call the service method with the new signature
-		Twit updatedTwit = twitService.updateTwit(twitId, req);
-		
-		TwitDto twitDto = TwitDtoMapper.toTwitDto(updatedTwit, user);
-		return new ResponseEntity<>(twitDto, HttpStatus.OK);
+		Twit updatedTwit = twitService.updateTwit(twitId, content, images, video, videoDuration, user);
+		return new ResponseEntity<>(updatedTwit, HttpStatus.ACCEPTED);
 	}
 	
 	@DeleteMapping("/{twitId}/images")
