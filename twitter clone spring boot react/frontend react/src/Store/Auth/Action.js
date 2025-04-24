@@ -97,13 +97,19 @@ export const loginWithGoogleAction = (data) => async (dispatch) => {
     const response = await axios.post(`${API_BASE_URL}/auth/signin/google`, data);
     const user = response.data;
     console.log("login with google user -: ", user);
+    
     if (user.jwt) {
       localStorage.setItem("jwt", user.jwt);
-      dispatch({type:GOOGLE_LOGIN_SUCCESS,payload:user.jwt});
-      return { payload: { status: true, jwt: user.jwt } };
+      dispatch({type:GOOGLE_LOGIN_SUCCESS, payload: user});
+      
+      // Fetch user profile after successful login
+      await dispatch(getUserProfile(user.jwt));
+      
+      return { payload: { status: true, jwt: user.jwt, user: user } };
     }
     return { payload: { status: false, message: "Google login failed" } };
   } catch (error) {
+    console.error("Google login error:", error);
     dispatch({type:GOOGLE_LOGIN_FAILURE, payload: error.message || "An error occurred during login."});
     return { payload: { status: false, message: error.message || "An error occurred during login." } };
   }

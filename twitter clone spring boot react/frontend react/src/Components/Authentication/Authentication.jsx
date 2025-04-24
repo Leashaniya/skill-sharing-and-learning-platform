@@ -35,10 +35,14 @@ const Authentication = () => {
       if (result.payload?.status) {
         // Close the modal if it's open
         setAuthModelOpen(false);
+        
+        // Wait for state updates to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Navigate to home section
-        setTimeout(() => {
-          navigate("/home");
-        }, 100);
+        navigate("/home");
+      } else {
+        console.error("Google login failed:", result.payload?.message);
       }
     } catch (error) {
       console.error("Google login error:", error);

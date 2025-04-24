@@ -202,8 +202,8 @@ const LearningJourney = () => {
       setEditFormData({
         title: journey.title,
         description: journey.description,
-        startDate: journey.startDate.split('T')[0],
-        endDate: journey.endDate.split('T')[0],
+        startDate: journey.startDate ? new Date(journey.startDate).toISOString().split('T')[0] : '',
+        endDate: journey.endDate ? new Date(journey.endDate).toISOString().split('T')[0] : '',
         estimatedDuration: journey.estimatedDuration,
         skillLevel: journey.skillLevel
       });
@@ -244,11 +244,9 @@ const LearningJourney = () => {
       console.log('Update response:', response.data);
 
       if (response.data) {
-        // Update the journeys state with the new data
-        setJourneys(journeys.map(journey => 
-          journey.id === selectedJourney.id ? response.data : journey
-        ));
-
+        // Instead of just updating the specific journey, reload the entire list
+        await loadJourneys();
+        
         // Close the edit dialog and clear the selected journey
         setEditDialogOpen(false);
         setSelectedJourney(null);
