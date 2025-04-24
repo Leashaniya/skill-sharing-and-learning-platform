@@ -34,7 +34,7 @@ export const navigationMenu = [
         path: "/communities"
     },
     {
-        title: "Skill Sharing",
+        title: "Learning Plans",
         icon: <SchoolIcon />,
         path: "/skill-sharing"
     },
