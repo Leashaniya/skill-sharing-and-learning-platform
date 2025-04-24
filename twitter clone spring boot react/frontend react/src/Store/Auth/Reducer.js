@@ -22,6 +22,9 @@ import {
     SEARCH_USER_SUCCESS,
     SEARCH_USER_FAILURE,
     SEARCH_USER_REQUEST,
+    GOOGLE_LOGIN_REQUEST,
+    GOOGLE_LOGIN_SUCCESS,
+    GOOGLE_LOGIN_FAILURE,
   } from './ActionType';
   
   const initialState = {
@@ -77,6 +80,27 @@ import {
       
       case LOGOUT:
         return {...initialState}
+
+      case GOOGLE_LOGIN_REQUEST:
+        return { ...state, loading: true, error: null };
+      
+      case GOOGLE_LOGIN_SUCCESS:
+        return { 
+          ...state, 
+          loading: false, 
+          error: null,
+          jwt: action.payload.jwt
+        };
+      
+      case GOOGLE_LOGIN_FAILURE:
+        return { 
+          ...state, 
+          loading: false, 
+          error: action.payload,
+          user: null,
+          jwt: null
+        };
+      
       default:
         return state;
     }

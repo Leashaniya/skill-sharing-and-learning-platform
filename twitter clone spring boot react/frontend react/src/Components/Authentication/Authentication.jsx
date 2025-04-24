@@ -1,4 +1,4 @@
-import { Button, Grid } from "@mui/material";
+import { Button, Grid, CircularProgress } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import AuthModel from "./AuthModel";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { loginWithGoogleAction } from "../../Store/Auth/Action";
 
 const Authentication = () => {
   const [authModelOpen, setAuthModelOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { auth } = useSelector((store) => store);
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,25 +30,34 @@ const Authentication = () => {
     }
   }, [location.pathname]);
 
-  const loginWithGoole = async (res) => {
+  const loginWithGoole = async (response) => {
     try {
-      const result = await dispatch(loginWithGoogleAction(res));
+      setIsLoading(true);
+      const result = await dispatch(loginWithGoogleAction(response.credential));
+      
       if (result.payload?.status) {
-        // Close the modal if it's open
-        setAuthModelOpen(false);
+        // Close auth modal if open
+        if (authModelOpen) {
+          setAuthModelOpen(false);
+        }
         
-        // Wait for state updates to complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Navigate to home section
+        // Use React Router's navigate instead of window.location
         navigate("/home");
-      } else {
-        console.error("Google login failed:", result.payload?.message);
       }
     } catch (error) {
       console.error("Google login error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <CircularProgress />
+      </div>
+    );
+  }
 
   return (
     <div className="">
@@ -65,7 +75,7 @@ const Authentication = () => {
             height="300" width="300"
               viewBox="0 0 24 24"
               aria-hidden="true"
-              class="r-jwli3a r-4qtqp9 r-yyyyoo r-labphf r-1777fci r-dnmrzs r-494qqr r-bnwqim r-1plcrui r-lrvibr"
+              className="r-jwli3a r-4qtqp9 r-yyyyoo r-labphf r-1777fci r-dnmrzs r-494qqr r-bnwqim r-1plcrui r-lrvibr"
             >
               <g>
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>

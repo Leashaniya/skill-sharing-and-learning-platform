@@ -92,26 +92,42 @@ export const loginUser = (loginData) => async (dispatch) => {
 };
 
 export const loginWithGoogleAction = (data) => async (dispatch) => {
-  dispatch({type:GOOGLE_LOGIN_REQUEST});
+  dispatch({type: GOOGLE_LOGIN_REQUEST});
   try {
-    const response = await axios.post(`${API_BASE_URL}/auth/signin/google`, data);
-    const user = response.data;
-    console.log("login with google user -: ", user);
+    const requestData = {
+      credential: data,
+      clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || "961098686120-p4pulrerjjelk6bhsbegd84m4r4mbdk7.apps.googleusercontent.com"
+    };
     
-    if (user.jwt) {
+    const response = await axios.post(`${API_BASE_URL}/auth/signin/google`, requestData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    const user = response.data;
+    
+    if (user.status && user.jwt) {
+      // Store JWT token
       localStorage.setItem("jwt", user.jwt);
-      dispatch({type:GOOGLE_LOGIN_SUCCESS, payload: user});
       
-      // Fetch user profile after successful login
-      await dispatch(getUserProfile(user.jwt));
+      // Update Redux store with user data
+      dispatch({type: GOOGLE_LOGIN_SUCCESS, payload: user});
       
-      return { payload: { status: true, jwt: user.jwt, user: user } };
+      // Fetch user profile
+      const profileResponse = await axios.get(`${API_BASE_URL}/api/users/profile`, {
+        headers: {
+          "Authorization": `Bearer ${user.jwt}`
+        }
+      });
+      
+      dispatch({type: GET_PROFILE_SUCCESS, payload: profileResponse.data});
+      
+      return { payload: { status: true, jwt: user.jwt } };
     }
-    return { payload: { status: false, message: "Google login failed" } };
+    return { payload: { status: false } };
   } catch (error) {
-    console.error("Google login error:", error);
-    dispatch({type:GOOGLE_LOGIN_FAILURE, payload: error.message || "An error occurred during login."});
-    return { payload: { status: false, message: error.message || "An error occurred during login." } };
+    dispatch({type: GOOGLE_LOGIN_FAILURE, payload: error.message});
+    return { payload: { status: false } };
   }
 };
 
