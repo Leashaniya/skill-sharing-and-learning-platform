@@ -30,6 +30,9 @@ public interface TwitRepository extends JpaRepository<Twit, Long> {
 	@Query(value = "DELETE FROM twit_images WHERE twit_id = :twitId", nativeQuery = true)
 	void deleteAllTwitImages(@Param("twitId") Long twitId);
 
+	@Query("SELECT t FROM Twit t WHERE (t.user = :viewer OR t.user IN :followedUsers) AND t.isTwit = true ORDER BY t.createdAt DESC")
+	List<Twit> findVisiblePosts(@Param("viewer") User viewer, @Param("followedUsers") List<User> followedUsers);
+
 //    @Query("SELECT t FROM Twit t JOIN t.likes l WHERE l.user.id = :userId")
 //    List<Twit> findTwitsByUserIdInLikes(Long userId);
 

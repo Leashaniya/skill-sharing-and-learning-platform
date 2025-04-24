@@ -25,8 +25,17 @@ const LearningJourneyForm = ({ open, onClose, postId }) => {
     const fetchData = async () => {
       if (postId) {
         try {
+          const token = localStorage.getItem("jwt");
+          if (!token) {
+            throw new Error("No authentication token found");
+          }
+
           // Fetch post details
-          const postResponse = await axios.get(`${API_BASE_URL}/api/twits/${postId}`);
+          const postResponse = await axios.get(`${API_BASE_URL}/api/twits/${postId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
           const postContent = postResponse.data.content;
           setPost(postResponse.data);
 
@@ -48,7 +57,8 @@ const LearningJourneyForm = ({ open, onClose, postId }) => {
           }
         } catch (error) {
           console.error('Error fetching data:', error);
-          setError('Failed to fetch post details');
+          setError('Failed to fetch post details. Please try again later.');
+          setPost(null);
         }
       }
     };
@@ -68,6 +78,7 @@ const LearningJourneyForm = ({ open, onClose, postId }) => {
       setError(null);
       setSuccess(false);
       setExistingJourney(null);
+      setPost(null);
     }
   }, [postId, open, learningJourney?.learningJourneys]);
 
