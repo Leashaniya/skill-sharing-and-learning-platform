@@ -91,13 +91,13 @@ const Authentication = () => {
             <img
               className="w-16"
               src="https://abs.twimg.com/responsive-web/client-web/icon-ios.b1fc727a.png"
-              alt="Twitter Logo"
+              alt="Logo"
             />
           </div>
 
           <h1 className="font-bold text-7xl">Happening now</h1>
 
-          <h1 className="font-bold text-3xl py-16">Join Twitter Today</h1>
+          <h1 className="font-bold text-3xl py-16">Join Skill Sphere Today</h1>
 
           <div className="w-[60%]">
             <div className="w-full">
