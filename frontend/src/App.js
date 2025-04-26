@@ -11,7 +11,6 @@ import darkTheme from './Theme/DarkTheme';
 import lightTheme from './Theme/LightTheme';
 import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import VerifiedSuccess from './Components/VerifiedSuccess/VerifiedSuccess';
 
 function App() {
   const dispatch = useDispatch();
@@ -40,7 +39,6 @@ function App() {
           <Route path='/auth' element={<Authentication />} />
           <Route path='/signin' element={<Authentication />} />
           <Route path='/signup' element={<Authentication />} />
-          <Route path='/verified' element={<VerifiedSuccess />} />
 
           {/* Protected Routes */}
           <Route

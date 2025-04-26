@@ -1,1 +1,1 @@
-# twitter-clone-spring-boot-react
+# Skill Sharing and Learning Platform
