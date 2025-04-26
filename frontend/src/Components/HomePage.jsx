@@ -10,6 +10,10 @@ import { Route, Routes } from 'react-router-dom'
 import Profile from './Profile/Profile'
 import TwitDetail from './Home/MiddlePart/TwitDetail'
 import LearningJourney from './LearningJourney/LearningJourney'
+import ViewPlansPage from "./LearningPlan/page";
+import AddPlanPage from "./LearningPlan/AddPlan";
+import EditPlanPage from "./LearningPlan/EditPlan";
+
 
 const HomePage = () => {
   const auth = useSelector(selectAuth);
@@ -34,6 +38,9 @@ const HomePage = () => {
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/twit/:id" element={<TwitDetail />} />
           <Route path="/learning-journey" element={<LearningJourney />} />
+          <Route path="/plans" element={<ViewPlansPage />} />
+          <Route path="/plans/add" element={<AddPlanPage />} />
+          <Route path="/plans/edit/:id" element={<EditPlanPage />} />
         </Routes>
       </Grid>
       <Grid item xs={0} lg={3} className="hidden lg:block w-full relative">
