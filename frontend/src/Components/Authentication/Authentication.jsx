@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { GoogleLogin } from "@react-oauth/google";
 import { loginWithGoogleAction } from "../../Store/Auth/Action";
+import AuthImage from "../../Assests/auth-background.jpg";
 
 const Authentication = () => {
   const [authModelOpen, setAuthModelOpen] = useState(false);
@@ -66,34 +67,12 @@ const Authentication = () => {
         <Grid className="hidden lg:block" item lg={7}>
           <img
             className="w-full h-screen"
-            src="https://abs.twimg.com/sticky/illustrations/lohp_en_1302x955.png"
+            src={AuthImage}
             alt=""
           />
 
-          <div className="absolute top-[26%] left-[19%]">
-            <svg
-            height="300" width="300"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="r-jwli3a r-4qtqp9 r-yyyyoo r-labphf r-1777fci r-dnmrzs r-494qqr r-bnwqim r-1plcrui r-lrvibr"
-            >
-              <g>
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-              </g>
-            </svg>
-          </div>
-
-          {/* 
-        <img className=" w-[50rem] absolute -top-5" src="https://cdn.pixabay.com/photo/2021/03/02/12/04/twitter-6062249_640.png" alt="" /> */}
         </Grid>
-        <Grid className="px-10" item lg={5} xs={12}>
-          <div className="py-10">
-            <img
-              className="w-16"
-              src="https://abs.twimg.com/responsive-web/client-web/icon-ios.b1fc727a.png"
-              alt="Logo"
-            />
-          </div>
+        <Grid className="px-10 items-center pt-20" item lg={5} xs={12}>
 
           <h1 className="font-bold text-7xl">Happening now</h1>
 

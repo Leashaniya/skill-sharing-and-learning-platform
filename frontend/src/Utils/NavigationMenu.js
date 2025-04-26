@@ -15,19 +15,9 @@ export const navigationMenu=[
         path:"/home"
     },
     {
-        title: "Explore",
-        icon:<ExploreIcon/>,
-        path:"/explore"
-    },
-    {
         title: "Notifications",
         icon:<NotificationsIcon/>,
         path:"/notifications"
-    },
-    {
-        title:"Messages" ,
-        icon:<MessageIcon/>,
-        path:"/messages"
     },
     {
         title:"Lists" ,
