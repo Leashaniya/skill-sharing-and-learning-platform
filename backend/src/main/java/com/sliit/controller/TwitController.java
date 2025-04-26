@@ -96,6 +96,20 @@ public class TwitController {
 		return new ResponseEntity<>(twitDto, HttpStatus.ACCEPTED);
 	}
 	
+	@GetMapping("/{twitId}/details")
+	public ResponseEntity<TwitDto> getTwitDetails(@PathVariable Long twitId,
+			@RequestHeader("Authorization") String jwt) throws TwitException, UserException {
+		User user = userService.findUserProfileByJwt(jwt);
+		Twit twit = twitService.findById(twitId);
+		
+		// Load likes and comments eagerly
+		twit.getLikes().size(); // This forces Hibernate to load the likes
+		twit.getReplyTwits().size(); // This forces Hibernate to load the comments
+		
+		TwitDto twitDto = TwitDtoMapper.toTwitDto(twit, user);
+		return new ResponseEntity<>(twitDto, HttpStatus.OK);
+	}
+	
 	@DeleteMapping("/{twitId}")
 	public ResponseEntity<ApiResponse> deleteTwitById(@PathVariable Long twitId,
 			@RequestHeader("Authorization") String jwt) throws UserException, TwitException {
@@ -159,7 +173,7 @@ public class TwitController {
 	}
 	
 	@PutMapping("/{twitId}")
-	public ResponseEntity<Twit> updateTwit(
+	public ResponseEntity<TwitDto> updateTwit(
 			@PathVariable Long twitId,
 			@RequestParam(required = false) String content,
 			@RequestParam(required = false) String images,
@@ -169,7 +183,10 @@ public class TwitController {
 		
 		User user = userService.findUserProfileByJwt(jwt);
 		Twit updatedTwit = twitService.updateTwit(twitId, content, images, video, videoDuration, user);
-		return new ResponseEntity<>(updatedTwit, HttpStatus.ACCEPTED);
+		
+		// Convert to DTO and return
+		TwitDto twitDto = TwitDtoMapper.toTwitDto(updatedTwit, user);
+		return new ResponseEntity<>(twitDto, HttpStatus.OK);
 	}
 	
 	@DeleteMapping("/{twitId}/images")

@@ -85,18 +85,42 @@ public class TwitServiceImplementation implements TwitService {
 				throw new UserException("you can't delete another users twit");
 			}
 			
-			// First explicitly delete all associated learning journeys
+			// First delete all associated learning journeys
 			List<LearningJourney> learningJourneys = learningJourneyRepository.findByPostId(twitId);
 			if (learningJourneys != null && !learningJourneys.isEmpty()) {
 				for (LearningJourney journey : learningJourneys) {
-					learningJourneyRepository.delete(journey);
+					try {
+						learningJourneyRepository.delete(journey);
+					} catch (Exception e) {
+						// Log the error but continue with deletion
+						System.err.println("Error deleting learning journey: " + e.getMessage());
+					}
 				}
-				// Flush to ensure learning journeys are deleted
-				learningJourneyRepository.flush();
+			}
+			
+			// Remove this twit from any parent twit's reply list
+			if (twit.getReplyFor() != null) {
+				Twit parentTwit = twit.getReplyFor();
+				parentTwit.getReplyTwits().remove(twit);
+				twitRepository.save(parentTwit);
+			}
+			
+			// Remove all replies to this twit
+			if (twit.getReplyTwits() != null && !twit.getReplyTwits().isEmpty()) {
+				for (Twit reply : twit.getReplyTwits()) {
+					reply.setReplyFor(null);
+					twitRepository.save(reply);
+				}
+				twit.getReplyTwits().clear();
+				twitRepository.save(twit);
 			}
 			
 			// Then delete the twit
-			twitRepository.deleteById(twit.getId());
+			try {
+				twitRepository.deleteById(twit.getId());
+			} catch (Exception e) {
+				throw new TwitException("Error deleting twit: " + e.getMessage());
+			}
 			
 		} catch (Exception e) {
 			throw new TwitException("Error deleting twit: " + e.getMessage());

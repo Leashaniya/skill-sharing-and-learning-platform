@@ -7,7 +7,8 @@ import {
     DELETE_POST,
     UPDATE_POST,
     ADD_COMMENT,
-    UNLIKE_POST
+    UNLIKE_POST,
+    GET_POST_DETAILS
 } from "./ActionType";
 import { api } from "../../Config/apiConfig";
 
@@ -128,11 +129,20 @@ export const findPostsByLikesContainUser = (userId) => async (dispatch) => {
 export const likePost = (postId) => async (dispatch) => {
     try {
         console.log("Liking post with ID:", postId);
-        const { data } = await api.put(`/api/twits/${postId}/like`);
-        console.log("Like response:", data);
-        dispatch({ type: LIKE_POST, payload: data });
+        const response = await api.post(`/api/${postId}/like`);
+        console.log("Like response:", response.data);
+        
+        // Dispatch the like action
+        dispatch({ type: LIKE_POST, payload: { postId, data: response.data } });
+        
+        // Refresh the posts to get the latest state
+        await dispatch(getAllPosts());
+        
+        // Return the response data
+        return response;
     } catch (error) {
         console.error("Error liking post:", error.response?.data || error.message);
+        throw error;
     }
 };
 
@@ -196,18 +206,23 @@ export const updatePost = (postId, postData) => async (dispatch) => {
             console.log(pair[0], ':', pair[1]);
         }
 
-        const { data } = await api.put(`/api/twits/${postId}`, formData);
-        console.log("Update response:", data);
+        const response = await api.put(`/api/twits/${postId}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         
-        if (!data) {
+        console.log("Update response:", response.data);
+        
+        if (!response.data) {
             throw new Error("No data received from server");
         }
 
-        dispatch({ type: UPDATE_POST, payload: data });
+        dispatch({ type: UPDATE_POST, payload: response.data });
         
         // Refresh the posts feed
         await dispatch(getAllPosts());
-        return { success: true, data };
+        return { success: true, data: response.data };
     } catch (error) {
         console.error("Error updating post:", error.response?.data || error.message);
         return { 
@@ -247,5 +262,19 @@ export const removeImageFromPost = (postId, imageUrl) => async (dispatch) => {
             success: false, 
             error: error.response?.data?.message || error.message || "Failed to remove image" 
         };
+    }
+};
+
+export const getPostDetails = (postId) => async (dispatch) => {
+    try {
+        console.log("Fetching post details for ID:", postId);
+        const response = await api.get(`/api/twits/${postId}/details`);
+        console.log("Post details response:", response.data);
+        
+        dispatch({ type: GET_POST_DETAILS, payload: response.data });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching post details:", error.response?.data || error.message);
+        throw error;
     }
 }; 

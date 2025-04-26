@@ -2,12 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deletePost } from '../../Store/Post/Action';
 import EditPostModal from './EditPostModal';
+import CommentModal from './CommentModal';
 
 const PostCard = ({ post }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [commentCount, setCommentCount] = useState(0);
     const dispatch = useDispatch();
     const { user } = useSelector(store => store.auth);
+
+    useEffect(() => {
+        // Update comment count when post changes
+        if (post.replyTwits) {
+            setCommentCount(post.replyTwits.length);
+        }
+    }, [post.replyTwits]);
 
     // Debug logging
     useEffect(() => {
@@ -114,7 +124,10 @@ const PostCard = ({ post }) => {
                         </svg>
                         Like
                     </button>
-                    <button className="flex items-center text-gray-500 hover:text-blue-500">
+                    <button 
+                        onClick={() => setShowCommentModal(true)}
+                        className="flex items-center text-gray-500 hover:text-blue-500"
+                    >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5 mr-1"
@@ -127,7 +140,7 @@ const PostCard = ({ post }) => {
                                 clipRule="evenodd"
                             />
                         </svg>
-                        Comment
+                        {commentCount} {commentCount === 1 ? 'Comment' : 'Comments'}
                     </button>
                 </div>
             </div>
@@ -136,6 +149,13 @@ const PostCard = ({ post }) => {
                 <EditPostModal
                     post={post}
                     onClose={() => setShowEditModal(false)}
+                />
+            )}
+
+            {showCommentModal && (
+                <CommentModal
+                    post={post}
+                    onClose={() => setShowCommentModal(false)}
                 />
             )}
         </div>

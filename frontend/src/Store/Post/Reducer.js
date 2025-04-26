@@ -44,12 +44,20 @@ export const postReducer = (state = initialState, action) => {
                 ...state,
                 posts: state.posts.map(post =>
                     post.id === action.payload.postId
-                        ? { ...post, liked: !post.liked, likes: action.payload.data.likes }
+                        ? { 
+                            ...post, 
+                            likes: action.payload.data.likes,
+                            liked: action.payload.data.liked
+                        }
                         : post
                 ),
                 userPosts: state.userPosts.map(post =>
                     post.id === action.payload.postId
-                        ? { ...post, liked: !post.liked, likes: action.payload.data.likes }
+                        ? { 
+                            ...post, 
+                            likes: action.payload.data.likes,
+                            liked: action.payload.data.liked
+                        }
                         : post
                 ),
             };

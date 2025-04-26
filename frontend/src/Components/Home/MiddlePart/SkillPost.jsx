@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
     Avatar, 
     Card, 
@@ -27,8 +27,9 @@ import CloseIcon from '@mui/icons-material/Close'
 import ImageIcon from '@mui/icons-material/Image'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import { useDispatch, useSelector } from 'react-redux'
-import { likePost, deletePost, updatePost, getAllPosts, removeImageFromPost } from '../../../Store/Post/Action'
+import { likePost, deletePost, updatePost, getAllPosts, removeImageFromPost, getPostDetails } from '../../../Store/Post/Action'
 import { uploadToCloudinary } from '../../../Utils/UploadToCloudinary'
+import { createComment, editComment, deleteComment } from '../../../Store/Twit/Action'
 
 // Helper function to format relative time
 const getRelativeTime = (dateString) => {
@@ -69,19 +70,56 @@ const SkillPost = ({ post }) => {
     const [newImages, setNewImages] = useState([]);
     const [newVideo, setNewVideo] = useState(null);
     const [uploadingMedia, setUploadingMedia] = useState(false);
-    
-    // Debug logging for date
-    console.log('Post createdAt:', post.createdAt);
-    console.log('Post createdAt type:', typeof post.createdAt);
-    console.log('Post createdAt parsed:', new Date(post.createdAt));
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [commentText, setCommentText] = useState('');
+    const [comments, setComments] = useState(post.replyTwits || []);
+    const [isLiked, setIsLiked] = useState(post.likes?.some(like => like.user?.id === auth.user?.id));
+    const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editCommentText, setEditCommentText] = useState('');
     
     const isOwner = post.user?.id === auth.user?.id;
     const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now';
     const relativeTime = getRelativeTime(post.createdAt);
-    const isLiked = post.likes?.some(like => like.id === auth.user?.id);
 
-    const handleLike = () => {
-        dispatch(likePost(post.id));
+    // Fetch post details when component mounts
+    useEffect(() => {
+        const fetchPostDetails = async () => {
+            try {
+                const postDetails = await dispatch(getPostDetails(post.id));
+                if (postDetails) {
+                    setIsLiked(postDetails.likes?.some(like => like.user?.id === auth.user?.id));
+                    setLikeCount(postDetails.likes?.length || 0);
+                    setComments(postDetails.replyTwits || []);
+                }
+            } catch (error) {
+                console.error('Error fetching post details:', error);
+            }
+        };
+
+        fetchPostDetails();
+    }, [post.id, dispatch, auth.user?.id]);
+
+    const handleLike = async () => {
+        try {
+            const response = await dispatch(likePost(post.id));
+            console.log("Like response:", response);
+            
+            // Update local state based on the response
+            if (response && response.data) {
+                setIsLiked(!isLiked);
+                setLikeCount(prevCount => isLiked ? prevCount - 1 : prevCount + 1);
+                
+                // Refresh post details after like
+                const postDetails = await dispatch(getPostDetails(post.id));
+                if (postDetails) {
+                    setIsLiked(postDetails.likes?.some(like => like.user?.id === auth.user?.id));
+                    setLikeCount(postDetails.likes?.length || 0);
+                }
+            }
+        } catch (error) {
+            console.error('Error handling like:', error);
+        }
     };
 
     const handleDelete = async () => {
@@ -277,7 +315,7 @@ const SkillPost = ({ post }) => {
                 dispatch(getAllPosts());
                 
                 // Close the edit dialog
-        setEditOpen(false);
+                setEditOpen(false);
                 
                 // Show success message
                 alert("Post updated successfully!");
@@ -298,6 +336,81 @@ const SkillPost = ({ post }) => {
 
     const handleCloseImagePreview = () => {
         setSelectedImage(null);
+    };
+
+    const handleComment = async () => {
+        try {
+            if (!commentText.trim()) return;
+            
+            const response = await dispatch(createComment(post.id, commentText));
+            console.log('Comment response:', response);
+            
+            // Update the comments list with the new comment
+            if (response && response.content) {
+                setComments(prev => [...prev, {
+                    id: response.id,
+                    content: response.content,
+                    user: auth.user,
+                    createdAt: new Date().toISOString(),
+                    replyContent: response.content
+                }]);
+                setCommentText('');
+                setShowCommentModal(false);
+            } else {
+                throw new Error('Invalid comment response');
+            }
+        } catch (error) {
+            console.error('Error creating comment:', error);
+            alert('Failed to add comment. Please try again.');
+        } finally {
+            window.location.reload();
+        }
+    };
+
+    const handleEditComment = async (commentId, currentContent) => {
+        setEditingCommentId(commentId);
+        setEditCommentText(currentContent);
+    };
+
+    const handleSaveEdit = async (commentId) => {
+        try {
+            if (!editCommentText.trim()) return;
+            
+            const response = await dispatch(editComment(commentId, editCommentText));
+            console.log('Edit comment response:', response);
+            
+            if (response && response.content) {
+                setComments(prev => prev.map(comment => 
+                    comment.id === commentId 
+                        ? { ...comment, content: response.content, replyContent: response.content }
+                        : comment
+                ));
+                setEditingCommentId(null);
+                setEditCommentText('');
+            } else {
+                throw new Error('Invalid edit response');
+            }
+        } catch (error) {
+            console.error('Error editing comment:', error);
+            alert('Failed to edit comment. Please try again.');
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            const response = await dispatch(deleteComment(commentId));
+            console.log('Delete comment response:', response);
+            
+            if (response && response.status) {
+                setComments(prev => prev.filter(comment => comment.id !== commentId));
+                alert('Comment deleted successfully');
+            } else {
+                throw new Error(response?.message || 'Failed to delete comment');
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            alert(error.message || 'Failed to delete comment. Please try again.');
+        }
     };
 
     return (
@@ -405,20 +518,151 @@ const SkillPost = ({ post }) => {
                         )}
                     </IconButton>
                     <span className={theme.currentTheme === "dark" ? "text-gray-400" : "text-gray-500"}>
-                        {post.likes?.length || 0}
+                        {likeCount}
                     </span>
 
                     <IconButton 
                         className="ml-2"
-                        onClick={() => setShowComments(!showComments)}
+                        onClick={() => setShowCommentModal(true)}
                     >
                         <CommentIcon className={theme.currentTheme === "dark" ? "text-gray-400" : "text-gray-500"} />
                     </IconButton>
                     <span className={theme.currentTheme === "dark" ? "text-gray-400" : "text-gray-500"}>
-                        {post.comments?.length || 0}
+                        {comments.length}
                     </span>
                 </CardActions>
             </Card>
+
+            {/* Comments Section */}
+            {showCommentModal && (
+                <Dialog
+                    open={showCommentModal}
+                    onClose={() => setShowCommentModal(false)}
+                    fullWidth
+                    maxWidth="sm"
+                >
+                    <DialogTitle>Comments</DialogTitle>
+                    <DialogContent>
+                        <div className="space-y-4">
+                            {/* Comment Input */}
+                            <div className="flex items-start space-x-2">
+                                <Avatar 
+                                    src={auth.user?.image} 
+                                    alt={auth.user?.fullName}
+                                    className="w-8 h-8"
+                                />
+                                <div className="flex-1">
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        rows={2}
+                                        placeholder="Write a comment..."
+                                        value={commentText}
+                                        onChange={(e) => setCommentText(e.target.value)}
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                    <div className="flex justify-end mt-2">
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleComment}
+                                            disabled={!commentText.trim()}
+                                        >
+                                            Comment
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Comments List */}
+                            <div className="space-y-4 mt-4">
+                                {comments.map((comment) => {
+                                    const isCommentOwner = comment.user?.id === auth.user?.id;
+                                    const isPostOwner = post.user?.id === auth.user?.id;
+                                    const canEditOrDelete = isCommentOwner || isPostOwner;
+
+                                    return (
+                                        <div key={comment.id} className="flex items-start space-x-2">
+                                            <Avatar 
+                                                src={comment.user?.image} 
+                                                alt={comment.user?.fullName}
+                                                className="w-8 h-8"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="bg-gray-100 rounded-lg p-3">
+                                                    <div className="font-semibold">
+                                                        {comment.user?.fullName}
+                                                    </div>
+                                                    {editingCommentId === comment.id ? (
+                                                        <div className="mt-2">
+                                                            <TextField
+                                                                fullWidth
+                                                                multiline
+                                                                rows={2}
+                                                                value={editCommentText}
+                                                                onChange={(e) => setEditCommentText(e.target.value)}
+                                                                variant="outlined"
+                                                                size="small"
+                                                            />
+                                                            <div className="flex justify-end mt-2 space-x-2">
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    onClick={() => setEditingCommentId(null)}
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    variant="contained"
+                                                                    size="small"
+                                                                    onClick={() => handleSaveEdit(comment.id)}
+                                                                >
+                                                                    Save
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="text-gray-700 mt-1">
+                                                                {comment.replyContent || comment.content || comment.text}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                {new Date(comment.createdAt).toLocaleString()}
+                                                            </div>
+                                                            {canEditOrDelete && (
+                                                                <div className="flex justify-end mt-2 space-x-2">
+                                                                    <Button
+                                                                        variant="text"
+                                                                        size="small"
+                                                                        onClick={() => handleEditComment(comment.id, comment.content)}
+                                                                    >
+                                                                        Edit
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="text"
+                                                                        size="small"
+                                                                        color="error"
+                                                                        onClick={() => handleDeleteComment(comment.id)}
+                                                                    >
+                                                                        Delete
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setShowCommentModal(false)}>Close</Button>
+                    </DialogActions>
+                </Dialog>
+            )}
 
             {/* Edit Dialog */}
             <Dialog 
@@ -500,26 +744,23 @@ const SkillPost = ({ post }) => {
                         <div className="mt-4 relative">
                             <video
                                 src={editVideo}
-                                className="w-full max-h-96 rounded-lg"
                                 controls
+                                className="w-full rounded-lg"
+                                style={{ aspectRatio: '16/9' }}
                             />
-                            <div className="absolute top-2 right-2 flex items-center space-x-2">
-                                <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded">
-                                    {editVideoDuration.toFixed(1)}s
+                            {editVideoDuration > 0 && (
+                                <span className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                                    {Math.round(editVideoDuration)}s
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        removeEditVideo();
-                                    }}
-                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
-                                    title="Remove video"
-                                >
-                                    <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
-                                </button>
-                            </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={removeEditVideo}
+                                className="absolute top-2 left-2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                title="Remove video"
+                            >
+                                <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                            </button>
                         </div>
                     )}
                     
@@ -528,30 +769,26 @@ const SkillPost = ({ post }) => {
                         <div className="mt-4 relative">
                             <video
                                 src={URL.createObjectURL(newVideo)}
-                                className="w-full max-h-96 rounded-lg"
                                 controls
+                                className="w-full rounded-lg"
+                                style={{ aspectRatio: '16/9' }}
                             />
-                            <div className="absolute top-2 right-2 flex items-center space-x-2">
-                                <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded">
-                                    {editVideoDuration.toFixed(1)}s
+                            {editVideoDuration > 0 && (
+                                <span className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                                    {Math.round(editVideoDuration)}s
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        removeEditVideo();
-                                    }}
-                                    className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
-                                    title="Remove video"
-                                >
-                                    <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
-                                </button>
-                            </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={removeEditVideo}
+                                className="absolute top-2 left-2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                title="Remove video"
+                            >
+                                <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                            </button>
                         </div>
                     )}
                     
-                    {/* Media upload buttons */}
                     <div className="flex space-x-5 items-center mt-4">
                         <label className="flex items-center space-x-2 rounded-md cursor-pointer" title="Upload up to 3 images">
                             <ImageIcon className="text-[#1d9bf0]" />
