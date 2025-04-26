@@ -37,8 +37,8 @@ public class AppConfig {
 		.and()
 		.oauth2Login()
 		.and()
-		.httpBasic().and()
-		.formLogin();
+		.httpBasic().disable()
+		.formLogin().disable();
 		
 		return http.build();
 		
@@ -57,11 +57,17 @@ public class AppConfig {
                     "https://twitter-clone-two-woad.vercel.app",
                     "https://twitter-clone-six-kohl.vercel.app"
                 ));
-                cfg.setAllowedMethods(Collections.singletonList("*"));
+                cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 cfg.setAllowCredentials(true);
-                cfg.setAllowedHeaders(Collections.singletonList("*"));
+                cfg.setAllowedHeaders(Arrays.asList("*"));
                 cfg.setExposedHeaders(Arrays.asList("Authorization"));
                 cfg.setMaxAge(3600L);
+                
+                // Add security headers
+                cfg.addExposedHeader("Cross-Origin-Opener-Policy");
+                cfg.addExposedHeader("Cross-Origin-Embedder-Policy");
+                cfg.addExposedHeader("Cross-Origin-Resource-Policy");
+                
                 return cfg;
             }
         };

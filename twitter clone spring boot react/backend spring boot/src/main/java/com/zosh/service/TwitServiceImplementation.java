@@ -148,6 +148,19 @@ public class TwitServiceImplementation implements TwitService {
 
 	@Override
 	@Transactional(readOnly = true)
+	public List<Twit> getVisiblePosts(User viewer) {
+		List<Twit> twits = twitRepository.findVisiblePosts(viewer, viewer.getFollowings());
+		// Initialize collections for each twit
+		for (Twit twit : twits) {
+			twit.getLikes().size();
+			twit.getReplyTwits().size();
+			twit.getRetwitUser().size();
+		}
+		return twits;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public List<Twit> getUsersTwit(User user) {
 		List<Twit> twits = twitRepository.findByRetwitUserContainsOrUser_IdAndIsTwitTrueOrderByCreatedAtDesc(user, user.getId());
 		// Initialize collections for each twit

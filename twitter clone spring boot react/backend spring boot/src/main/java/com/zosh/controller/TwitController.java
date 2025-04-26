@@ -127,7 +127,7 @@ public class TwitController {
 	@GetMapping("/")
 	public ResponseEntity<List<TwitDto>> findAllTwits(@RequestHeader("Authorization") String jwt) throws UserException {
 		User user = userService.findUserProfileByJwt(jwt);
-		List<Twit> twits = twitService.findAllTwit();
+		List<Twit> twits = twitService.getVisiblePosts(user);
 		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, user);
 		return new ResponseEntity<>(twitDtos, HttpStatus.OK);
 	}
@@ -137,6 +137,12 @@ public class TwitController {
 			@RequestHeader("Authorization") String jwt) throws UserException {
 		User reqUser = userService.findUserProfileByJwt(jwt);
 		User user = userService.findUserById(userId);
+		
+		// Only show posts if the viewer is the same user or follows the profile owner
+		if (!reqUser.getId().equals(userId) && !reqUser.getFollowings().contains(user)) {
+			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+		}
+		
 		List<Twit> twits = twitService.getUsersTwit(user);
 		List<TwitDto> twitDtos = TwitDtoMapper.toTwitDtos(twits, reqUser);
 		return new ResponseEntity<>(twitDtos, HttpStatus.OK);

@@ -16,6 +16,8 @@ public interface TwitService {
 	
 	public List<Twit> findAllTwit();
 	
+	public List<Twit> getVisiblePosts(User viewer);
+	
 	public Twit retwit(Long twitId, User user) throws UserException, TwitException;
 	
 	public Twit findById(Long twitId) throws TwitException;

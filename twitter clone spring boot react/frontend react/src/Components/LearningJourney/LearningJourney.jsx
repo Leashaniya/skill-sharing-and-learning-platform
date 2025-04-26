@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Card, CardContent, LinearProgress, Chip, CircularProgress, Grid, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Divider } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, CircularProgress, Grid, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Divider } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -27,6 +27,7 @@ const LearningJourney = () => {
     estimatedDuration: '',
     skillLevel: ''
   });
+  const [dateError, setDateError] = useState('');
 
   const loadJourneys = async () => {
     if (!auth.user?.id) {
@@ -153,30 +154,6 @@ const LearningJourney = () => {
     }
   };
 
-  const calculateProgress = (startDate, endDate, status) => {
-    if (status === 'COMPLETED') {
-        return 100;
-    }
-    if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const now = new Date();
-    
-    if (now >= end) return 100;
-    if (now <= start) return 0;
-    
-    const total = end - start;
-    const elapsed = now - start;
-    return Math.round((elapsed / total) * 100);
-  };
-
-  const getProgressColor = (progress) => {
-    if (progress === 100) return '#4CAF50';
-    if (progress >= 75) return '#2196F3';
-    if (progress >= 50) return '#FFC107';
-    return '#F44336';
-  };
-
   const handleOpenModal = (journey) => {
     setSelectedJourney(journey);
     setOpenModal(true);
@@ -187,74 +164,89 @@ const LearningJourney = () => {
     setSelectedJourney(null);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  const handleEdit = (journey) => {
+    setSelectedJourney(journey);
+    
+    // Extract just the date part from the ISO string (YYYY-MM-DD)
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      return dateString.split('T')[0];
+    };
+
+    setEditFormData({
+      title: journey.title,
+      description: journey.description,
+      startDate: formatDateForInput(journey.startDate),
+      endDate: formatDateForInput(journey.endDate),
+      estimatedDuration: journey.estimatedDuration,
+      skillLevel: journey.skillLevel
     });
+    setEditDialogOpen(true);
   };
 
-  const handleEditClick = (journey, e) => {
-    e.stopPropagation();
-    if (journey.status === 'PENDING') {
-      setSelectedJourney(journey);
-      setEditFormData({
-        title: journey.title,
-        description: journey.description,
-        startDate: journey.startDate.split('T')[0],
-        endDate: journey.endDate.split('T')[0],
-        estimatedDuration: journey.estimatedDuration,
-        skillLevel: journey.skillLevel
-      });
-      setEditDialogOpen(true);
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value
+    });
+
+    // Validate dates when either start or end date changes
+    if (name === 'startDate' || name === 'endDate') {
+      if (editFormData.startDate && editFormData.endDate) {
+        const start = new Date(editFormData.startDate);
+        const end = new Date(editFormData.endDate);
+        if (end < start) {
+          setDateError('End date must be greater than or equal to start date');
+        } else {
+          setDateError('');
+        }
+      }
     }
   };
 
-  const handleEditSubmit = async () => {
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate dates before submission
+    if (editFormData.startDate && editFormData.endDate) {
+      const start = new Date(editFormData.startDate);
+      const end = new Date(editFormData.endDate);
+      if (end < start) {
+        setDateError('End date must be greater than or equal to start date');
+        return;
+      }
+    }
+
     try {
       const token = localStorage.getItem("jwt");
       if (!token) {
         throw new Error("No authentication token found");
       }
 
-      // Format the data according to the backend expectations
+      // Format dates to include time component for LocalDateTime
       const formattedData = {
-        title: editFormData.title,
-        description: editFormData.description,
-        startDate: new Date(editFormData.startDate).toISOString(),
-        endDate: new Date(editFormData.endDate).toISOString(),
-        estimatedDuration: parseInt(editFormData.estimatedDuration),
-        skillLevel: editFormData.skillLevel
+        ...editFormData,
+        startDate: `${editFormData.startDate}T00:00:00`,
+        endDate: `${editFormData.endDate}T00:00:00`
       };
-
-      console.log('Sending update request with data:', formattedData);
 
       const response = await axios.put(
         `${API_BASE_URL}/api/learning-journeys/${selectedJourney.id}`,
         formattedData,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
           }
         }
       );
 
-      console.log('Update response:', response.data);
-
       if (response.data) {
-        // Update the journeys state with the new data
-        setJourneys(journeys.map(journey => 
-          journey.id === selectedJourney.id ? response.data : journey
-        ));
-
-        // Close the edit dialog and clear the selected journey
+        await loadJourneys();
         setEditDialogOpen(false);
         setSelectedJourney(null);
-        
-        // Show success message
         setError(null);
+        setDateError('');
       } else {
         throw new Error('No data received from server');
       }
@@ -262,13 +254,6 @@ const LearningJourney = () => {
       console.error('Error updating journey:', err);
       setError(err.response?.data?.message || 'Failed to update learning journey. Please try again.');
     }
-  };
-
-  const handleEditChange = (e) => {
-    setEditFormData({
-      ...editFormData,
-      [e.target.name]: e.target.value
-    });
   };
 
   if (loading) {
@@ -316,16 +301,14 @@ const LearningJourney = () => {
           My Learning Journey
         </Typography>
         <Typography variant="body1" color="textSecondary">
-          Track your progress and continue learning
+          Track your learning goals and achievements
         </Typography>
       </Box>
 
       <Grid container spacing={2}>
         {journeys.map((journey, index) => {
-          const progress = calculateProgress(journey.startDate, journey.endDate, journey.status);
           const startDate = new Date(journey.startDate).toLocaleDateString();
           const endDate = new Date(journey.endDate).toLocaleDateString();
-          const progressColor = getProgressColor(progress);
           const isCompleted = journey.status === 'COMPLETED';
           
           return (
@@ -353,32 +336,6 @@ const LearningJourney = () => {
                       <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
                         {journey.estimatedDuration} hours
                       </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                          Progress
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                          {progress}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={progress} 
-                        sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          backgroundColor: '#e0e0e0',
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 4,
-                            backgroundColor: progressColor
-                          }
-                        }}
-                      />
                     </Box>
                   </Box>
 
@@ -439,35 +396,28 @@ const LearningJourney = () => {
                     )}
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
-                        onClick={(e) => handleEditClick(journey, e)}
                         size="small"
+                        onClick={() => handleEdit(journey)}
+                        disabled={isCompleted}
                         sx={{ 
-                          width: '32px',
-                          height: '32px',
-                          color: journey.status === 'PENDING' ? 'primary.main' : 'grey.400',
-                          '&:hover': {
-                            backgroundColor: journey.status === 'PENDING' ? 'primary.light' : 'grey.100'
-                          },
-                          cursor: journey.status === 'PENDING' ? 'pointer' : 'not-allowed'
+                          color: isCompleted ? 'text.disabled' : 'primary.main',
+                          '&:hover': { 
+                            backgroundColor: isCompleted ? 'transparent' : 'rgba(25, 118, 210, 0.04)',
+                            cursor: isCompleted ? 'not-allowed' : 'pointer'
+                          }
                         }}
-                        disabled={journey.status !== 'PENDING'}
-                        title={journey.status !== 'PENDING' ? 'Only PENDING journeys can be edited' : 'Edit journey'}
                       >
-                        <EditIcon sx={{ fontSize: '1.25rem' }} />
+                        <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
-                        color="error"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(journey.id);
-                        }}
                         size="small"
+                        onClick={() => handleDelete(journey.id)}
                         sx={{ 
-                          width: '32px',
-                          height: '32px'
+                          color: 'error.main',
+                          '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' }
                         }}
                       >
-                        <DeleteIcon sx={{ fontSize: '1.25rem' }} />
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>
@@ -478,66 +428,134 @@ const LearningJourney = () => {
         })}
       </Grid>
 
-      <Dialog 
-        open={openModal} 
-        onClose={handleCloseModal}
-        maxWidth="md"
-        fullWidth
-      >
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Learning Journey</DialogTitle>
+        <form onSubmit={handleEditSubmit}>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Title"
+                name="title"
+                value={editFormData.title}
+                onChange={handleEditChange}
+                required
+                fullWidth
+                disabled
+                helperText="Title cannot be modified"
+              />
+              <TextField
+                label="Description"
+                name="description"
+                value={editFormData.description}
+                onChange={handleEditChange}
+                multiline
+                rows={4}
+                required
+                fullWidth
+              />
+              <TextField
+                label="Start Date"
+                name="startDate"
+                type="date"
+                value={editFormData.startDate}
+                onChange={handleEditChange}
+                required
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                error={!!dateError}
+              />
+              <TextField
+                label="End Date"
+                name="endDate"
+                type="date"
+                value={editFormData.endDate}
+                onChange={handleEditChange}
+                required
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                error={!!dateError}
+                helperText={dateError}
+              />
+              <TextField
+                label="Estimated Duration (hours)"
+                name="estimatedDuration"
+                type="number"
+                value={editFormData.estimatedDuration}
+                onChange={handleEditChange}
+                required
+                fullWidth
+                inputProps={{ min: 1 }}
+              />
+              <TextField
+                label="Skill Level"
+                name="skillLevel"
+                value={editFormData.skillLevel}
+                onChange={handleEditChange}
+                select
+                required
+                fullWidth
+                SelectProps={{
+                  native: true
+                }}
+              >
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </TextField>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained" color="primary">
+              Save Changes
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={openModal} onClose={handleCloseModal} maxWidth="sm" fullWidth>
         {selectedJourney && (
           <>
-            <DialogTitle>
-              <Typography variant="h5" component="div">
-                {selectedJourney.title}
-              </Typography>
-            </DialogTitle>
+            <DialogTitle>{selectedJourney.title}</DialogTitle>
             <DialogContent>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Description
-                </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Typography variant="body1" paragraph>
                   {selectedJourney.description}
                 </Typography>
 
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Start Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(selectedJourney.startDate)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      End Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(selectedJourney.endDate)}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Progress
-                  </Typography>
-                  <Box sx={{ width: '100%', mr: 1 }}>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={calculateProgress(selectedJourney.startDate, selectedJourney.endDate, selectedJourney.status)}
-                      color={getProgressColor(calculateProgress(selectedJourney.startDate, selectedJourney.endDate, selectedJourney.status))}
-                      sx={{ height: 10, borderRadius: 5 }}
-                    />
-                    <Typography variant="body2" color="text.secondary" align="center" mt={1}>
-                      {calculateProgress(selectedJourney.startDate, selectedJourney.endDate, selectedJourney.status)}% Complete
-                    </Typography>
-                  </Box>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Chip
+                    label={selectedJourney.skillLevel}
+                    size="small"
+                    icon={<SchoolIcon fontSize="small" />}
+                    sx={{ 
+                      fontSize: '0.875rem',
+                      height: '32px',
+                      '& .MuiChip-label': { px: 2 }
+                    }}
+                  />
+                  <Chip
+                    label={`${new Date(selectedJourney.startDate).toLocaleDateString()} - ${new Date(selectedJourney.endDate).toLocaleDateString()}`}
+                    size="small"
+                    icon={<AccessTimeIcon fontSize="small" />}
+                    sx={{ 
+                      fontSize: '0.875rem',
+                      height: '32px',
+                      '& .MuiChip-label': { px: 2 }
+                    }}
+                  />
+                  <Chip
+                    label={`${selectedJourney.estimatedDuration} hours`}
+                    size="small"
+                    icon={<AccessTimeIcon fontSize="small" />}
+                    sx={{ 
+                      fontSize: '0.875rem',
+                      height: '32px',
+                      '& .MuiChip-label': { px: 2 }
+                    }}
+                  />
                 </Box>
 
                 <Divider sx={{ my: 2 }} />
@@ -581,104 +599,6 @@ const LearningJourney = () => {
             </DialogActions>
           </>
         )}
-      </Dialog>
-
-      <Dialog 
-        open={editDialogOpen} 
-        onClose={() => {
-          setEditDialogOpen(false);
-          setSelectedJourney(null);
-        }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h5">Edit Learning Journey</Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Title"
-              name="title"
-              value={editFormData.title}
-              onChange={handleEditChange}
-              fullWidth
-              required
-              disabled
-              helperText="Title cannot be modified"
-            />
-            <TextField
-              label="Description"
-              name="description"
-              value={editFormData.description}
-              onChange={handleEditChange}
-              fullWidth
-              multiline
-              rows={4}
-              required
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Start Date"
-                name="startDate"
-                type="date"
-                value={editFormData.startDate}
-                onChange={handleEditChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                label="End Date"
-                name="endDate"
-                type="date"
-                value={editFormData.endDate}
-                onChange={handleEditChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Estimated Duration (hours)"
-                name="estimatedDuration"
-                type="number"
-                value={editFormData.estimatedDuration}
-                onChange={handleEditChange}
-                fullWidth
-                required
-                inputProps={{ min: 1 }}
-              />
-              <TextField
-                label="Skill Level"
-                name="skillLevel"
-                value={editFormData.skillLevel}
-                onChange={handleEditChange}
-                fullWidth
-                required
-                select
-              >
-                <MenuItem value="BEGINNER">Beginner</MenuItem>
-                <MenuItem value="INTERMEDIATE">Intermediate</MenuItem>
-                <MenuItem value="ADVANCED">Advanced</MenuItem>
-              </TextField>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setEditDialogOpen(false);
-            setSelectedJourney(null);
-          }}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handleEditSubmit}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
       </Dialog>
     </div>
   );
