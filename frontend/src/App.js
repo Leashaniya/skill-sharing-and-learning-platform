@@ -44,25 +44,25 @@ function App() {
           <Route
             path='/home'
             element={
-              auth.user ? (
+              // auth.user ? (
                 <PrivateRoute>
                   <HomePage />
                 </PrivateRoute>
-              ) : (
-                <Navigate to="/auth" />
-              )
+              // ) : (
+              //   <Navigate to="/auth" />
+              // )
             }
           />
           <Route
             path='/*'
             element={
-              auth.user ? (
+              // auth.user ? (
                 <PrivateRoute>
                   <HomePage />
                 </PrivateRoute>
-              ) : (
-                <Navigate to="/auth" />
-              )
+              // ) : (
+              //   <Navigate to="/auth" />
+              // )
             }
           />
         </Routes>
