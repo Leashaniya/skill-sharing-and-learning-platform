@@ -10,9 +10,16 @@ import { Route, Routes } from 'react-router-dom'
 import Profile from './Profile/Profile'
 import TwitDetail from './Home/MiddlePart/TwitDetail'
 import LearningJourney from './LearningJourney/LearningJourney'
+
 import ViewPlansPage from "./LearningPlan/page";
 import AddPlanPage from "./LearningPlan/AddPlan";
 import EditPlanPage from "./LearningPlan/EditPlan";
+
+import Communities from "./Communities/page";
+import AddCommunities from "./Communities/addCommunities";
+import SingleCommunity from "./Communities/SingleCommunity";
+import EditCommunity from "./Communities/editCommunities";
+
 
 
 const HomePage = () => {
@@ -35,6 +42,10 @@ const HomePage = () => {
         <Routes>
           <Route path="/" element={<HomeSection />} />
           <Route path="/home" element={<HomeSection />} />
+          <Route path="/communities" element={<Communities />} />
+          <Route path="/communities/add" element={<AddCommunities />} />
+          <Route path="/community/:id" element={<SingleCommunity />} />
+          <Route path="/community/edit/:id" element={<EditCommunity />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/twit/:id" element={<TwitDetail />} />
           <Route path="/learning-journey" element={<LearningJourney />} />
