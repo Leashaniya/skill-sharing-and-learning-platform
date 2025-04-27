@@ -34,8 +34,14 @@ export const navigationMenu = [
         path: "/learning-journey"
     },
     {
+        title: "Learning Plans",
+        icon: <AutoStoriesIcon />,
+        path: "/plans"
+    },
+    {
         title: "Profile",
         icon: <AccountCircleIcon />,
         path: "/profile/:id"
     }
+
 ] 
