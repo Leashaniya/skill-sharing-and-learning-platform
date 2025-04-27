@@ -17,6 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.sliit.config.JwtTokenValidator;
 
 @Configuration
 @EnableWebSecurity
@@ -52,6 +53,7 @@ public class AppConfig {
                 CorsConfiguration cfg = new CorsConfiguration();
                 cfg.setAllowedOrigins(Arrays.asList(
                     "http://localhost:3000",
+                    "http://localhost:3001",
                     "http://localhost:4000",
                     "http://localhost:4200"
                 ));
