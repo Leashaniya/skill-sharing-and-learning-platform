@@ -12,7 +12,6 @@ import lightTheme from './Theme/LightTheme';
 import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 
-
 function App() {
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
