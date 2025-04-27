@@ -41,7 +41,7 @@ api.interceptors.response.use(
             });
         }
         console.error('API Error:', error.response?.data || error.message);
-        
+        throw error;
     }
 );
 
