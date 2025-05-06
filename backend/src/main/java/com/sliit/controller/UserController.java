@@ -18,6 +18,7 @@ import com.sliit.dto.UserDto;
 import com.sliit.dto.mapper.UserDtoMapper;
 import com.sliit.exception.UserException;
 import com.sliit.model.User;
+import com.sliit.service.NotificationService;
 import com.sliit.service.UserService;
 import com.sliit.util.UserUtil;
 import com.sliit.dto.ApiResponseDto;
@@ -33,9 +34,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserController {
 
 private UserService userService;
+private NotificationService notificationService;
 	
-	public UserController(UserService userService) {
+	public UserController(UserService userService, NotificationService notificationService) {
 		this.userService=userService;
+		this.notificationService=notificationService;
 	}
 	
 	@GetMapping("/profile")
@@ -111,6 +114,12 @@ private UserService userService;
 		User updatedUser=userService.followUser(userId, user);
 		UserDto userDto=UserDtoMapper.toUserDto(updatedUser);
 		userDto.setFollowed(UserUtil.isFollowedByReqUser(user, updatedUser));
+
+		User from = user;
+		User to = userService.findUserById(userId);
+
+		notificationService.createFollowNotification(from, to);
+
 		return new ResponseEntity<>(userDto,HttpStatus.ACCEPTED);
 	}
 	
