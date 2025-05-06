@@ -19,6 +19,7 @@ import Communities from "./Communities/page";
 import AddCommunities from "./Communities/addCommunities";
 import SingleCommunity from "./Communities/SingleCommunity";
 import EditCommunity from "./Communities/editCommunities";
+import Notification from "./Notifications/Notification";
 
 
 
@@ -42,6 +43,7 @@ const HomePage = () => {
         <Routes>
           <Route path="/" element={<HomeSection />} />
           <Route path="/home" element={<HomeSection />} />
+          <Route path="/notifications" element={<Notification />} />
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/add" element={<AddCommunities />} />
           <Route path="/community/:id" element={<SingleCommunity />} />
