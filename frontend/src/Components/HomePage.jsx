@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Grid } from "@mui/material";
 import Navigation from "./Navigation/Navigation";
 import HomeSection from "./Home/MiddlePart/HomeSection";
@@ -26,11 +26,12 @@ import Notification from "./Notifications/Notification";
 const HomePage = () => {
   const auth = useSelector(selectAuth);
   const theme = useSelector(selectTheme);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   return (
     <Grid container xs={12} className="px-5 lg:px-36 justify-between">
       <Grid item xs={0} lg={2.5} className="hidden lg:block w-full relative">
-        <Navigation />
+        <Navigation notificationCount={notificationCount} />
       </Grid>
       <Grid
         item
@@ -43,7 +44,7 @@ const HomePage = () => {
         <Routes>
           <Route path="/" element={<HomeSection />} />
           <Route path="/home" element={<HomeSection />} />
-          <Route path="/notifications" element={<Notification />} />
+          <Route path="/notifications" element={<Notification notificationCount={notificationCount} setNotificationCount={setNotificationCount} />} />
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/add" element={<AddCommunities />} />
           <Route path="/community/:id" element={<SingleCommunity />} />

@@ -2,6 +2,7 @@ package com.sliit.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -47,5 +48,9 @@ public class NotificationService {
 
     public List<Notification> getNotificationsForUser(User user) {
         return notificationRepository.findByTo(user);
+    }
+
+    public Optional<Notification> getNotificationById(Long id) {
+        return notificationRepository.findById(id);
     }
 }

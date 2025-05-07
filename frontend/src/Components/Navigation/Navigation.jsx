@@ -1,15 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { navigationMenu } from "./NavigationMenu";
 import { Avatar, Button } from "@mui/material";
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../Store/Auth/Action";
 import { useNavigate } from "react-router-dom";
 
-const Navigation = () => {
-  const { auth } = useSelector(store => store);
+const Navigation = ({ notificationCount }) => {
+  const { auth } = useSelector((store) => store);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const dispatch = useDispatch();
@@ -46,13 +46,20 @@ const Navigation = () => {
         </div>
         <div className="space-y-6">
           {navigationMenu.map((item) => (
-            <div 
-              key={item.title}
-              className="cursor-pointer flex space-x-3 items-center" 
-              onClick={() => handleNavigation(item)}
-            >
-              {item.icon}
-              <p className="text-xl">{item.title}</p>
+            <div className="relative">
+              <div
+                key={item.title}
+                className="cursor-pointer flex space-x-3 items-center"
+                onClick={() => handleNavigation(item)}
+              >
+                {item.icon}
+                <p className="text-xl">{item.title}</p>
+              </div>
+              {notificationCount > 0 && item.title == "Notifications" ? (
+                <div className="bg-red-600 text-white text-xs h-4 w-4 flex items-center justify-center rounded-full absolute top-[-10px] left-[12px]">{notificationCount}</div>
+              ) : (
+                <></>
+              )}
             </div>
           ))}
         </div>
@@ -70,21 +77,25 @@ const Navigation = () => {
           </Button>
         </div>
         <div className="flex items-center justify-between">
-          <div 
-            className="flex items-center space-x-3 cursor-pointer" 
-            onClick={() => auth.user?.id && navigate(`/profile/${auth.user.id}`)}
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={() =>
+              auth.user?.id && navigate(`/profile/${auth.user.id}`)
+            }
           >
             <Avatar alt={auth.user?.fullName} src={auth.user?.image} />
             <div>
               <p>{auth.user?.fullName}</p>
-              <span className="opacity-70">@{auth.user?.fullName.split(" ").join("_").toLowerCase()}</span>
+              <span className="opacity-70">
+                @{auth.user?.fullName.split(" ").join("_").toLowerCase()}
+              </span>
             </div>
           </div>
           <Button
             id="basic-button"
-            aria-controls={open ? 'basic-menu' : undefined}
+            aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
-            aria-expanded={open ? 'true' : undefined}
+            aria-expanded={open ? "true" : undefined}
             onClick={handleClick}
           >
             <MoreHorizIcon />
@@ -95,7 +106,7 @@ const Navigation = () => {
             open={open}
             onClose={handleClose}
             MenuListProps={{
-              'aria-labelledby': 'basic-button',
+              "aria-labelledby": "basic-button",
             }}
           >
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
