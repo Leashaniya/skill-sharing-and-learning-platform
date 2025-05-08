@@ -5,29 +5,46 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* New: background gradient and text color */
+  background: linear-gradient(to right, #e0eafc, #cfdef3);
+  min-height: 100vh;
+  color: #333;
 }
 
-p{
+/* Optional: dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(to right, #232526, #414345);
+    color: #f0f0f0;
+  }
+}
+
+p {
   margin: 0;
   padding: 0;
+  line-height: 1.6;
+  font-size: 1rem;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  background-color: #f4f4f4;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
-/* For webkit-based browsers (Chrome, Safari) */
+/* Hide scrollbar for specific elements with class hideScrollbar */
 .hideScrollbar::-webkit-scrollbar {
-  
   display: none;
 }
 
+.hideScrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
 
-
-
-
-
+/* Tailwind CSS directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
