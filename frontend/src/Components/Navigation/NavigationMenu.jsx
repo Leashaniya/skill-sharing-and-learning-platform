@@ -24,11 +24,6 @@ export const navigationMenu = [
         path: "/communities"
     },
     {
-        title: "Skill Sharing",
-        icon: <SchoolIcon />,
-        path: "/skill-sharing"
-    },
-    {
         title: "Learning Journey",
         icon: <AutoStoriesIcon />,
         path: "/learning-journey"
@@ -43,5 +38,4 @@ export const navigationMenu = [
         icon: <AccountCircleIcon />,
         path: "/profile/:id"
     }
-
 ] 

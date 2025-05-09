@@ -60,7 +60,14 @@ public class AppConfig {
                 cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 cfg.setAllowCredentials(true);
                 cfg.setAllowedHeaders(Arrays.asList("*"));
-                cfg.setExposedHeaders(Arrays.asList("Authorization"));
+                cfg.setExposedHeaders(Arrays.asList(
+                    "Authorization",
+                    "Content-Type",
+                    "Content-Length",
+                    "Transfer-Encoding",
+                    "X-Content-Type-Options",
+                    "X-Frame-Options"
+                ));
                 cfg.setMaxAge(3600L);
                 
                 // Add security headers

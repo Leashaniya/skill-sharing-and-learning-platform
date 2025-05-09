@@ -7,8 +7,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchLearningJourneys } from '../../Store/LearningJourney/Action';
-import axios from 'axios';
-import { API_BASE_URL } from '../../Config/apiConfig';
+import { api } from '../../Config/apiConfig';
 
 const LearningJourney = () => {
   const dispatch = useDispatch();
@@ -31,6 +30,7 @@ const LearningJourney = () => {
 
   const loadJourneys = async () => {
     if (!auth.user?.id) {
+      console.log('No user ID found in auth state');
       setLoading(false);
       return;
     }
@@ -39,58 +39,58 @@ const LearningJourney = () => {
       setLoading(true);
       setError(null);
       
+      // Check if JWT token exists
       const token = localStorage.getItem("jwt");
       if (!token) {
-        throw new Error("No authentication token found");
+        throw new Error("No authentication token found. Please log in again.");
       }
 
-      const response = await axios.get(
-        `${API_BASE_URL}/api/learning-journeys`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      console.log('Fetching learning journeys for user:', auth.user.id);
+      const response = await api.get('/api/learning-journeys');
       
-      console.log('API Response:', response.data);
-      
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+
+      console.log('Received response:', response.data);
+
       let journeysData = [];
-      if (Array.isArray(response.data)) {
-        journeysData = response.data;
-      } else if (response.data && typeof response.data === 'object') {
-        if (Array.isArray(response.data.journeys)) {
-          journeysData = response.data.journeys;
-        } else if (Array.isArray(response.data.content)) {
-          journeysData = response.data.content;
-        } else if (Array.isArray(response.data.data)) {
-          journeysData = response.data.data;
-        } else {
-          journeysData = Object.values(response.data);
-        }
-      }
-
-      const validJourneys = journeysData.filter(journey => 
-        journey && 
-        typeof journey === 'object' &&
-        journey.title &&
-        journey.description &&
-        journey.startDate &&
-        journey.endDate &&
-        journey.estimatedDuration &&
-        journey.skillLevel
-      );
-
-      if (validJourneys.length > 0) {
-        setJourneys(validJourneys);
+      if (response.data.journeys) {
+        journeysData = response.data.journeys.map(journey => ({
+          ...journey,
+          startDate: journey.startDate ? new Date(journey.startDate).toISOString() : null,
+          endDate: journey.endDate ? new Date(journey.endDate).toISOString() : null,
+          createdAt: journey.createdAt ? new Date(journey.createdAt).toISOString() : null
+        }));
+      } else if (Array.isArray(response.data)) {
+        journeysData = response.data.map(journey => ({
+          ...journey,
+          startDate: journey.startDate ? new Date(journey.startDate).toISOString() : null,
+          endDate: journey.endDate ? new Date(journey.endDate).toISOString() : null,
+          createdAt: journey.createdAt ? new Date(journey.createdAt).toISOString() : null
+        }));
       } else {
-        console.error('No learning journeys found:', response.data);
-        setError('No learning journeys found');
-        setJourneys([]);
+        throw new Error('Invalid response format from server');
       }
+
+      console.log('Processed journeys data:', journeysData);
+      setJourneys(journeysData);
     } catch (error) {
       console.error('Error loading learning journeys:', error);
-      setError('Failed to load learning journeys. Please try again later.');
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Server response:', error.response.data);
+        setError(error.response.data?.error || `Server error: ${error.response.status}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('No response received:', error.request);
+        setError('No response from server. Please check your connection.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error('Request setup error:', error.message);
+        setError(error.message || 'Failed to load learning journeys. Please try again later.');
+      }
       setJourneys([]);
     } finally {
       setLoading(false);
@@ -108,8 +108,8 @@ const LearningJourney = () => {
         throw new Error("No authentication token found");
       }
 
-      await axios.put(
-        `${API_BASE_URL}/api/learning-journeys/${journeyId}/complete`,
+      await api.put(
+        `/api/learning-journeys/${journeyId}/complete`,
         {},
         {
           headers: {
@@ -137,8 +137,8 @@ const LearningJourney = () => {
         throw new Error("No authentication token found");
       }
 
-      await axios.delete(
-        `${API_BASE_URL}/api/learning-journeys/${journeyId}`,
+      await api.delete(
+        `/api/learning-journeys/${journeyId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -231,8 +231,8 @@ const LearningJourney = () => {
         endDate: `${editFormData.endDate}T00:00:00`
       };
 
-      const response = await axios.put(
-        `${API_BASE_URL}/api/learning-journeys/${selectedJourney.id}`,
+      const response = await api.put(
+        `/api/learning-journeys/${selectedJourney.id}`,
         formattedData,
         {
           headers: {

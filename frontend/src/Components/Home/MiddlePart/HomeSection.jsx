@@ -43,29 +43,19 @@ const HomeSection = () => {
   const posts = useSelector((state) => state.post.posts);
   const [likeCount, setLikeCount] = useState({});
   const [likedStatus, setLikedStatus] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    dispatch(getAllPosts());
-  }, [dispatch]);
-
-  const checkVideoDuration = (file) => {
-    return new Promise((resolve, reject) => {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-
-      video.onloadedmetadata = function() {
-        window.URL.revokeObjectURL(video.src);
-        if (video.duration > MAX_VIDEO_DURATION) {
-          reject(new Error(`Video duration must not exceed ${MAX_VIDEO_DURATION} seconds`));
-        }
-        setVideoDuration(video.duration);
-        resolve(true);
-      };
-
-      video.src = URL.createObjectURL(file);
-    });
+  // Define getLikeCount before useEffect
+  const getLikeCount = async (postId) => {
+    try {
+      const res = await api.get(`/api/likes/twit/${postId}`);
+      setLikeCount((prevState) => ({ ...prevState, [postId]: res.data.length }));
+    } catch (error) {
+      console.log(error);
+    }
   };
 
+  // Define handleSubmit before useFormik
   const handleSubmit = async (values, actions) => {
     try {
       // Check if content is empty and no media is selected
@@ -163,6 +153,92 @@ const HomeSection = () => {
     }
   };
 
+  // Now we can use handleSubmit in useFormik
+  const formik = useFormik({
+    initialValues: {
+      content: "",
+    },
+    validationSchema,
+    onSubmit: handleSubmit,
+  });
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        await dispatch(getAllPosts());
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [dispatch]);
+
+  useEffect(() => {
+    posts.forEach((post) => {
+      getLikeCount(post.id);
+    });
+  }, [posts]);
+
+  useEffect(() => {
+    const fetchLikedStatus = async () => {
+      const updatedLikedStatus = {};
+
+      for (const post of posts) {
+        const postId = post.id;
+        try {
+          const res = await api.get(`/api/likes/twit/${postId}`);
+          const liked = res.data.some((like) => like.user.id === auth.user?.id);
+          updatedLikedStatus[postId] = liked;
+        } catch (error) {
+          console.error("Error fetching liked status for post", postId, error);
+        }
+      }
+
+      setLikedStatus(updatedLikedStatus);
+    };
+
+    if (posts.length > 0 && auth.user) {
+      fetchLikedStatus();
+    }
+  }, [posts, auth.user]);
+
+  if (!auth.user) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Please log in to view and interact with posts</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  const checkVideoDuration = (file) => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+
+      video.onloadedmetadata = function() {
+        window.URL.revokeObjectURL(video.src);
+        if (video.duration > MAX_VIDEO_DURATION) {
+          reject(new Error(`Video duration must not exceed ${MAX_VIDEO_DURATION} seconds`));
+        }
+        setVideoDuration(video.duration);
+        resolve(true);
+      };
+
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleImageSelect = (event) => {
     const files = Array.from(event.target.files);
     
@@ -256,14 +332,6 @@ const HomeSection = () => {
     formik.resetForm();
   };
 
-  const formik = useFormik({
-    initialValues: {
-      content: "",
-    },
-    validationSchema,
-    onSubmit: handleSubmit,
-  });
-
   const handleOpenLearningJourney = (postId) => {
     setSelectedPostId(postId);
     setLearningJourneyOpen(true);
@@ -273,55 +341,6 @@ const HomeSection = () => {
     setLearningJourneyOpen(false);
     setSelectedPostId(null);
   };
-
-  useEffect(() => {
-    posts.forEach((post) => {
-      getLikeCount(post.id);
-    });
-  }, [posts]);
-
-  const fetchLikes = async (postId) => {
-    try {
-      const res = await api.get(`/api/likes/twit/${postId}`);
-      console.log("Likes", res);
-      setLikeCount((prevState) => ({ ...prevState, [postId]: res.data.length }));
-    } catch (error) {
-      console.log(error);
-    }
-  }; 
-
-  const getLikeCount = async (postId) => {
-    try {
-      const res = await api.get(`/api/likes/twit/${postId}`);
-      setLikeCount((prevState) => ({ ...prevState, [postId]: res.data.length }));
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchLikedStatus = async () => {
-      const updatedLikedStatus = {};
-
-      for (const post of posts) {
-        const postId = post.id;
-        try {
-          const res = await api.get(`/api/likes/twit/${postId}`);
-          const liked = res.data.some((like) => like.user.id === auth.user.id);
-          updatedLikedStatus[postId] = liked;
-        } catch (error) {
-          console.error("Error fetching liked status for post", postId, error);
-        }
-      }
-
-      // Update the liked status for all posts
-      setLikedStatus(updatedLikedStatus);
-    };
-
-    if (posts.length > 0) {
-      fetchLikedStatus();
-    }
-  }, [posts, auth.user.id]);
 
   return (
     <div className="w-full">

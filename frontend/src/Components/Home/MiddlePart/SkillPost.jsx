@@ -78,7 +78,7 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editCommentText, setEditCommentText] = useState('');
     
-    const isOwner = post.user?.id === auth.user?.id;
+    const isOwner = auth.user ? post.user?.id === auth.user.id : false;
     const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now';
     const relativeTime = getRelativeTime(post.createdAt);
 
@@ -339,77 +339,84 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
     };
 
     const handleComment = async () => {
+        if (!auth.user) {
+            alert("Please log in to comment");
+            return;
+        }
+
+        if (!commentText.trim()) {
+            alert("Please enter a comment");
+            return;
+        }
+
         try {
-            if (!commentText.trim()) return;
-            
-            const response = await dispatch(createComment(post.id, commentText));
-            console.log('Comment response:', response);
-            
-            // Update the comments list with the new comment
-            if (response && response.content) {
-                setComments(prev => [...prev, {
-                    id: response.id,
-                    content: response.content,
-                    user: auth.user,
-                    createdAt: new Date().toISOString(),
-                    replyContent: response.content
-                }]);
-                setCommentText('');
-                setShowCommentModal(false);
-            } else {
-                throw new Error('Invalid comment response');
+            await dispatch(createComment(post.id, commentText.trim()));
+            setCommentText('');
+            setShowCommentModal(false);
+            // Refresh comments
+            const updatedPost = await dispatch(getPostDetails(post.id));
+            if (updatedPost) {
+                setComments(updatedPost.replyTwits || []);
             }
         } catch (error) {
-            console.error('Error creating comment:', error);
-            alert('Failed to add comment. Please try again.');
-        } finally {
-            window.location.reload();
+            console.error("Error creating comment:", error);
+            alert(error.response?.data?.message || "Failed to create comment. Please try again.");
         }
     };
 
     const handleEditComment = async (commentId, currentContent) => {
+        if (!auth.user) {
+            alert("Please log in to edit comments");
+            return;
+        }
         setEditingCommentId(commentId);
         setEditCommentText(currentContent);
     };
 
     const handleSaveEdit = async (commentId) => {
+        if (!auth.user) {
+            alert("Please log in to edit comments");
+            return;
+        }
+
+        if (!editCommentText.trim()) {
+            alert("Please enter a comment");
+            return;
+        }
+
         try {
-            if (!editCommentText.trim()) return;
-            
-            const response = await dispatch(editComment(commentId, editCommentText));
-            console.log('Edit comment response:', response);
-            
-            if (response && response.content) {
-                setComments(prev => prev.map(comment => 
-                    comment.id === commentId 
-                        ? { ...comment, content: response.content, replyContent: response.content }
-                        : comment
-                ));
-                setEditingCommentId(null);
-                setEditCommentText('');
-            } else {
-                throw new Error('Invalid edit response');
+            await dispatch(editComment(commentId, editCommentText.trim()));
+            setEditingCommentId(null);
+            setEditCommentText('');
+            // Refresh comments
+            const updatedPost = await dispatch(getPostDetails(post.id));
+            if (updatedPost) {
+                setComments(updatedPost.replyTwits || []);
             }
         } catch (error) {
-            console.error('Error editing comment:', error);
-            alert('Failed to edit comment. Please try again.');
+            console.error("Error editing comment:", error);
+            alert(error.response?.data?.message || "Failed to edit comment. Please try again.");
         }
     };
 
     const handleDeleteComment = async (commentId) => {
-        try {
-            const response = await dispatch(deleteComment(commentId));
-            console.log('Delete comment response:', response);
-            
-            if (response && response.status) {
-                setComments(prev => prev.filter(comment => comment.id !== commentId));
-                alert('Comment deleted successfully');
-            } else {
-                throw new Error(response?.message || 'Failed to delete comment');
+        if (!auth.user) {
+            alert("Please log in to delete comments");
+            return;
+        }
+
+        if (window.confirm('Are you sure you want to delete this comment?')) {
+            try {
+                await dispatch(deleteComment(commentId));
+                // Refresh comments
+                const updatedPost = await dispatch(getPostDetails(post.id));
+                if (updatedPost) {
+                    setComments(updatedPost.replyTwits || []);
+                }
+            } catch (error) {
+                console.error("Error deleting comment:", error);
+                alert(error.response?.data?.message || "Failed to delete comment. Please try again.");
             }
-        } catch (error) {
-            console.error('Error deleting comment:', error);
-            alert(error.message || 'Failed to delete comment. Please try again.');
         }
     };
 

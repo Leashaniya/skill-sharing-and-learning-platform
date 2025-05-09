@@ -9,6 +9,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Lombok;
@@ -48,8 +50,8 @@ public class Notification {
     @JoinColumn(name = "to_user_id", nullable = false)
     private User to;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", foreignKey = @ForeignKey(name = "FK_NOTIFICATION_TWIT"))
     @JsonIgnore
     private Twit post;
 
