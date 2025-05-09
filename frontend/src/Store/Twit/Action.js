@@ -47,11 +47,11 @@ export const editComment = (commentId, content) => async (dispatch) => {
         const token = localStorage.getItem('jwt');
         const response = await axios.put(
             `${API_BASE_URL}/api/twits/${commentId}`,
-            { content },
+            null,
             {
+                params: { content },
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    Authorization: `Bearer ${token}`
                 },
             }
         );
