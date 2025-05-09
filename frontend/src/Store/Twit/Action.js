@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../../Config/apiConfig';
+import { toast } from 'react-toastify';
 
 export const createComment = (twitId, content) => async (dispatch) => {
     try {
@@ -17,8 +18,10 @@ export const createComment = (twitId, content) => async (dispatch) => {
                 },
             }
         );
+        toast.success('Comment posted!');
         return response.data;
     } catch (error) {
+        toast.error('Failed to post comment.');
         console.error('Error creating comment:', error);
         throw error;
     }
@@ -55,8 +58,10 @@ export const editComment = (commentId, content) => async (dispatch) => {
                 },
             }
         );
+        toast.info('Comment updated!');
         return response.data;
     } catch (error) {
+        toast.error('Failed to update comment.');
         console.error('Error editing comment:', error);
         throw error;
     }
@@ -73,8 +78,10 @@ export const deleteComment = (commentId) => async (dispatch) => {
                 },
             }
         );
+        toast.success('Comment deleted!');
         return response.data;
     } catch (error) {
+        toast.error('Failed to delete comment.');
         console.error('Error deleting comment:', error);
         throw error;
     }

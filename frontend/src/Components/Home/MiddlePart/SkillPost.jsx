@@ -30,6 +30,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { likePost, deletePost, updatePost, getAllPosts, removeImageFromPost, getPostDetails } from '../../../Store/Post/Action'
 import { uploadToCloudinary } from '../../../Utils/UploadToCloudinary'
 import { createComment, editComment, deleteComment } from '../../../Store/Twit/Action'
+import { toast } from 'react-toastify'
 
 // Helper function to format relative time
 const getRelativeTime = (dateString) => {
@@ -77,6 +78,9 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
     const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editCommentText, setEditCommentText] = useState('');
+    const [showDeletePostDialog, setShowDeletePostDialog] = useState(false);
+    const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false);
+    const [deleteCommentId, setDeleteCommentId] = useState(null);
     
     const isOwner = auth.user ? post.user?.id === auth.user.id : false;
     const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now';
@@ -122,18 +126,8 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
         }
     };
 
-    const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this skill post?')) {
-            try {
-                const response = await dispatch(deletePost(post.id));
-                if (!response.success) {
-                    alert(response.error || 'Failed to delete post. Please try again.');
-                }
-            } catch (error) {
-                console.error("Error deleting post:", error);
-                alert('An error occurred while deleting the post. Please try again.');
-            }
-        }
+    const handleDelete = () => {
+        setShowDeletePostDialog(true);
     };
 
     const handleEdit = () => {
@@ -318,13 +312,13 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                 setEditOpen(false);
                 
                 // Show success message
-                alert("Post updated successfully!");
+                toast.success("Post updated successfully!");
             } else {
                 throw new Error(response?.error || "Failed to update post");
             }
         } catch (error) {
             console.error("Error updating post:", error);
-            alert(error.message || 'An error occurred while updating the post. Please try again.');
+            toast.error(error.message || 'An error occurred while updating the post. Please try again.');
         } finally {
             setUploadingMedia(false);
         }
@@ -340,12 +334,12 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
 
     const handleComment = async () => {
         if (!auth.user) {
-            alert("Please log in to comment");
+            toast.error("Please log in to comment");
             return;
         }
 
         if (!commentText.trim()) {
-            alert("Please enter a comment");
+            toast.error("Please enter a comment");
             return;
         }
 
@@ -360,7 +354,7 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
             }
         } catch (error) {
             console.error("Error creating comment:", error);
-            alert(error.response?.data?.message || "Failed to create comment. Please try again.");
+            toast.error(error.response?.data?.message || "Failed to create comment. Please try again.");
         }
     };
 
@@ -399,25 +393,13 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
         }
     };
 
-    const handleDeleteComment = async (commentId) => {
+    const handleDeleteComment = (commentId) => {
         if (!auth.user) {
-            alert("Please log in to delete comments");
+            toast.error("Please log in to delete comments");
             return;
         }
-
-        if (window.confirm('Are you sure you want to delete this comment?')) {
-            try {
-                await dispatch(deleteComment(commentId));
-                // Refresh comments
-                const updatedPost = await dispatch(getPostDetails(post.id));
-                if (updatedPost) {
-                    setComments(updatedPost.replyTwits || []);
-                }
-            } catch (error) {
-                console.error("Error deleting comment:", error);
-                alert(error.response?.data?.message || "Failed to delete comment. Please try again.");
-            }
-        }
+        setDeleteCommentId(commentId);
+        setShowDeleteCommentDialog(true);
     };
 
     return (
@@ -855,6 +837,74 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                     />
                 </Box>
             </Modal>
+
+            {/* Post Deletion Dialog */}
+            <Dialog
+                open={showDeletePostDialog}
+                onClose={() => setShowDeletePostDialog(false)}
+            >
+                <DialogTitle>Delete Post</DialogTitle>
+                <DialogContent>
+                    Are you sure you want to delete this post?
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowDeletePostDialog(false)}>Cancel</Button>
+                    <Button
+                        color="error"
+                        onClick={async () => {
+                            try {
+                                const response = await dispatch(deletePost(post.id));
+                                if (!response.success) {
+                                    toast.error(response.error || 'Failed to delete post. Please try again.');
+                                } else {
+                                    toast.success('Post deleted!');
+                                }
+                            } catch (error) {
+                                toast.error('An error occurred while deleting the post. Please try again.');
+                            } finally {
+                                setShowDeletePostDialog(false);
+                            }
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Comment Deletion Dialog */}
+            <Dialog
+                open={showDeleteCommentDialog}
+                onClose={() => setShowDeleteCommentDialog(false)}
+            >
+                <DialogTitle>Delete Comment</DialogTitle>
+                <DialogContent>
+                    Are you sure you want to delete this comment?
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowDeleteCommentDialog(false)}>Cancel</Button>
+                    <Button
+                        color="error"
+                        onClick={async () => {
+                            try {
+                                await dispatch(deleteComment(deleteCommentId));
+                                toast.success("Comment deleted!");
+                                // Refresh comments
+                                const updatedPost = await dispatch(getPostDetails(post.id));
+                                if (updatedPost) {
+                                    setComments(updatedPost.replyTwits || []);
+                                }
+                            } catch (error) {
+                                toast.error(error.response?.data?.message || "Failed to delete comment. Please try again.");
+                            } finally {
+                                setShowDeleteCommentDialog(false);
+                                setDeleteCommentId(null);
+                            }
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 };

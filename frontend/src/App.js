@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { getUserProfile } from './Store/Auth/Action';
 import PrivateRoute from './Components/Authentication/PrivateRoute';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import darkTheme from './Theme/DarkTheme';
 import lightTheme from './Theme/LightTheme';
@@ -68,6 +70,7 @@ function App() {
           />
         </Routes>
       </Box>
+      <ToastContainer position="bottom-right" autoClose={3000} />
     </ThemeProvider>
   );
 }
