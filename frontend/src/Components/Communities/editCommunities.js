@@ -42,20 +42,22 @@ function EditCommunity() {
       });
   }, [id]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async e => {
     const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImage(null);
-      setImagePreview(null);
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const url = await UploadToCloudinary(file);
+      setPhoto(url);
+      setPreview(URL.createObjectURL(file));
+    } catch (error) {
+      toast.error('Image upload failed');
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -462,6 +464,5 @@ function EditCommunity() {
     </div>
   );
 }
-
 
 export default EditCommunity;
