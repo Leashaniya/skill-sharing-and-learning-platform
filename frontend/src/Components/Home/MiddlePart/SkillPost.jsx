@@ -293,6 +293,10 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                 const videoUrl = await uploadToCloudinary(newVideo, "video");
                 formData.append('video', videoUrl);
                 formData.append('videoDuration', editVideoDuration);
+            } else {
+                // If both are null, explicitly clear the video
+                formData.append('video', '');
+                formData.append('videoDuration', '');
             }
 
             console.log("Sending update with formData:");
@@ -599,8 +603,6 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                                 {comments.map((comment) => {
                                     const isCommentOwner = comment.user?.id === auth.user?.id;
                                     const isPostOwner = post.user?.id === auth.user?.id;
-                                    const canEditOrDelete = isCommentOwner || isPostOwner;
-
                                     return (
                                         <div key={comment.id} className="flex items-start space-x-2">
                                             <Avatar 
@@ -649,8 +651,8 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                                                             <div className="text-xs text-gray-500 mt-1">
                                                                 {new Date(comment.createdAt).toLocaleString()}
                                                             </div>
-                                                            {canEditOrDelete && (
-                                                                <div className="flex justify-end mt-2 space-x-2">
+                                                            <div className="flex justify-end mt-2 space-x-2">
+                                                                {isCommentOwner && (
                                                                     <Button
                                                                         variant="text"
                                                                         size="small"
@@ -658,6 +660,8 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                                                                     >
                                                                         Edit
                                                                     </Button>
+                                                                )}
+                                                                {(isCommentOwner || isPostOwner) && (
                                                                     <Button
                                                                         variant="text"
                                                                         size="small"
@@ -666,8 +670,8 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                                                                     >
                                                                         Delete
                                                                     </Button>
-                                                                </div>
-                                                            )}
+                                                                )}
+                                                            </div>
                                                         </>
                                                     )}
                                                 </div>

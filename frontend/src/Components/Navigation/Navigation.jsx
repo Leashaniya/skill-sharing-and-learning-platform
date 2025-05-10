@@ -46,9 +46,8 @@ const Navigation = ({ notificationCount }) => {
         </div>
         <div className="space-y-6">
           {navigationMenu.map((item) => (
-            <div className="relative">
+            <div className="relative" key={item.title}>
               <div
-                key={item.title}
                 className="cursor-pointer flex space-x-3 items-center"
                 onClick={() => handleNavigation(item)}
               >

@@ -81,8 +81,13 @@ public class TwitServiceImplementation implements TwitService {
 		try {
 			Twit twit = findById(twitId);
 			
-			if(!userId.equals(twit.getUser().getId())) {
-				throw new UserException("you can't delete another users twit");
+			// Allow comment author or parent post owner to delete a comment (reply)
+			boolean isComment = twit.getReplyFor() != null;
+			boolean isCommentAuthor = userId.equals(twit.getUser().getId());
+			boolean isParentPostOwner = isComment && userId.equals(twit.getReplyFor().getUser().getId());
+
+			if (!(isCommentAuthor || isParentPostOwner)) {
+				throw new UserException("You can't delete this comment.");
 			}
 			
 			// First delete all associated learning journeys
@@ -242,7 +247,10 @@ public class TwitServiceImplementation implements TwitService {
 			}
 			
 			// Handle video update
-			if (video != null) {
+			if (video == null || video.isEmpty()) {
+				twit.setVideo(null);
+				twit.setVideoDuration(null);
+			} else {
 				twit.setVideo(video);
 				if (videoDuration != null) {
 					twit.setVideoDuration(videoDuration);
