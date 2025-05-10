@@ -31,7 +31,7 @@ public class LearningPlanController {
     public List<LearningPlanDTO> getAllPlans() {
         return service.getAllPlans();  // ✅ NEW
     }
-
+// Endpoint to get all learning plans created by a specific user
     @GetMapping("/user/{userId}")
     public List<LearningPlanDTO> getPlansByUser(@PathVariable Long userId) {
         return service.getPlansByUser(userId);
