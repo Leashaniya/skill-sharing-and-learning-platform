@@ -58,7 +58,7 @@ function AddCommunities() {
 
     return newErrors;
   };
-  const [uploadingImage, setUploadingImage] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
