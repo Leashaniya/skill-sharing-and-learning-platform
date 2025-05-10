@@ -18,6 +18,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShareIcon from '@mui/icons-material/Share';
+import { api } from "../../../Config/apiConfig";
 
 const MAX_IMAGES = 3;
 const MAX_VIDEO_DURATION = 30; // in seconds
@@ -40,6 +41,8 @@ const HomeSection = () => {
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
   const posts = useSelector((state) => state.post.posts);
+  const [likeCount, setLikeCount] = useState({});
+  const [likedStatus, setLikedStatus] = useState({});
 
   useEffect(() => {
     dispatch(getAllPosts());
@@ -271,6 +274,55 @@ const HomeSection = () => {
     setSelectedPostId(null);
   };
 
+  useEffect(() => {
+    posts.forEach((post) => {
+      getLikeCount(post.id);
+    });
+  }, [posts]);
+
+  const fetchLikes = async (postId) => {
+    try {
+      const res = await api.get(`/api/likes/twit/${postId}`);
+      console.log("Likes", res);
+      setLikeCount((prevState) => ({ ...prevState, [postId]: res.data.length }));
+    } catch (error) {
+      console.log(error);
+    }
+  }; 
+
+  const getLikeCount = async (postId) => {
+    try {
+      const res = await api.get(`/api/likes/twit/${postId}`);
+      setLikeCount((prevState) => ({ ...prevState, [postId]: res.data.length }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchLikedStatus = async () => {
+      const updatedLikedStatus = {};
+
+      for (const post of posts) {
+        const postId = post.id;
+        try {
+          const res = await api.get(`/api/likes/twit/${postId}`);
+          const liked = res.data.some((like) => like.user.id === auth.user.id);
+          updatedLikedStatus[postId] = liked;
+        } catch (error) {
+          console.error("Error fetching liked status for post", postId, error);
+        }
+      }
+
+      // Update the liked status for all posts
+      setLikedStatus(updatedLikedStatus);
+    };
+
+    if (posts.length > 0) {
+      fetchLikedStatus();
+    }
+  }, [posts, auth.user.id]);
+
   return (
     <div className="w-full">
       <div className="border border-r-[1px] border-l-[1px] border-gray-200">
@@ -415,7 +467,7 @@ const HomeSection = () => {
                       <AddIcon style={{ fontSize: '30px' }} />
                     </Tooltip>
                   </IconButton>
-                  <SkillPost post={item} />
+                  <SkillPost liked={likedStatus[item.id]} post={item} noOfLikes={likeCount[item.id]} />
                 </div>
               ))
             )}

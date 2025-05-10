@@ -20,8 +20,11 @@ import com.sliit.exception.LikeException;
 import com.sliit.exception.TwitException;
 import com.sliit.exception.UserException;
 import com.sliit.model.Like;
+import com.sliit.model.Twit;
 import com.sliit.model.User;
 import com.sliit.service.LikesService;
+import com.sliit.service.NotificationService;
+import com.sliit.service.TwitService;
 import com.sliit.service.UserService;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -34,10 +37,14 @@ public class LikeController {
 	
 	private UserService userService;
 	private LikesService likeService;
+	private NotificationService notificationService;
+	private TwitService twitService;
 	
-	public LikeController(UserService userService,LikesService likeService) {
+	public LikeController(UserService userService,LikesService likeService, NotificationService notificationService, TwitService twitService) {
 		this.userService=userService;
 		this.likeService=likeService;
+		this.notificationService = notificationService;
+		this.twitService = twitService;
 	}
 	
 	@PostMapping("/{twitId}/like")
@@ -49,6 +56,12 @@ public class LikeController {
 		Like like =likeService.likeTwit(twitId, user);
 		
 		LikeDto likeDto=LikeDtoMapper.toLikeDto(like,user);
+
+		User from = user;
+		Twit post = twitService.findById(twitId);
+		User to = post.getUser();
+
+		notificationService.createLikeNotification(from, to, post);
 		
 		return new ResponseEntity<>(likeDto,HttpStatus.CREATED);
 	}
@@ -65,7 +78,7 @@ public class LikeController {
 		return new ResponseEntity<>(likeDto,HttpStatus.CREATED);
 	}
 	
-	@GetMapping("/twit/{twitId}")
+	@GetMapping("likes/twit/{twitId}")
 	public ResponseEntity<List<LikeDto>>getAllLike(
 			@PathVariable Long twitId,@RequestHeader("Authorization") String jwt) throws UserException, TwitException{
 		User user=userService.findUserProfileByJwt(jwt);

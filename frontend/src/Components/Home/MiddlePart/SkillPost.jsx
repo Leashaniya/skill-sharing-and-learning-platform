@@ -56,7 +56,7 @@ const getRelativeTime = (dateString) => {
     return `${Math.floor(diffInSeconds / 31536000)}y ago`;
 };
 
-const SkillPost = ({ post }) => {
+const SkillPost = ({ post, liked, noOfLikes }) => {
     const dispatch = useDispatch();
     const { auth, theme } = useSelector(state => state);
     const [editOpen, setEditOpen] = useState(false);
@@ -511,14 +511,14 @@ const SkillPost = ({ post }) => {
 
                 <CardActions disableSpacing>
                     <IconButton onClick={handleLike}>
-                        {isLiked ? (
+                        {liked ? (
                             <FavoriteIcon className="text-red-500" />
                         ) : (
                             <FavoriteBorderIcon className={theme.currentTheme === "dark" ? "text-gray-400" : "text-gray-500"} />
                         )}
                     </IconButton>
                     <span className={theme.currentTheme === "dark" ? "text-gray-400" : "text-gray-500"}>
-                        {likeCount}
+                        {noOfLikes}
                     </span>
 
                     <IconButton 
