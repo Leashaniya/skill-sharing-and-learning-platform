@@ -19,6 +19,7 @@ import RepeatIcon from '@mui/icons-material/Repeat';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShareIcon from '@mui/icons-material/Share';
 import { api } from "../../../Config/apiConfig";
+import { toast } from 'react-toastify';
 
 const MAX_IMAGES = 3;
 const MAX_VIDEO_DURATION = 30; // in seconds
@@ -249,7 +250,7 @@ const HomeSection = () => {
 
     // Check total number of images
     if (selectedImages.length + files.length > MAX_IMAGES) {
-      alert(`You can only upload up to ${MAX_IMAGES} images per post`);
+      toast.error(`You can only upload up to ${MAX_IMAGES} images per post`);
       return;
     }
 

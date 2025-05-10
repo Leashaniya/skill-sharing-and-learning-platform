@@ -150,7 +150,7 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
 
         // Check total number of images
         if (editImages.length + newImages.length + files.length > 3) {
-            alert(`You can only upload up to 3 images per post`);
+            toast.error("You can only upload up to 3 images per post");
             return;
         }
 
@@ -481,19 +481,50 @@ const SkillPost = ({ post, liked, noOfLikes }) => {
                     )}
 
                     {/* Display video */}
-                    {post.video && (
+                    {editVideo && (
                         <div className="mt-4 relative">
                             <video
-                                src={post.video}
+                                src={editVideo}
                                 controls
                                 className="w-full rounded-lg"
                                 style={{ aspectRatio: '16/9' }}
                             />
-                            {post.videoDuration && (
+                            {editVideoDuration > 0 && (
                                 <span className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                                    {Math.round(post.videoDuration)}s
+                                    {Math.round(editVideoDuration)}s
                                 </span>
                             )}
+                            <button
+                                type="button"
+                                onClick={removeEditVideo}
+                                className="absolute top-2 left-2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                title="Remove video"
+                            >
+                                <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                            </button>
+                        </div>
+                    )}
+                    {newVideo && (
+                        <div className="mt-4 relative">
+                            <video
+                                src={URL.createObjectURL(newVideo)}
+                                controls
+                                className="w-full rounded-lg"
+                                style={{ aspectRatio: '16/9' }}
+                            />
+                            {editVideoDuration > 0 && (
+                                <span className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                                    {Math.round(editVideoDuration)}s
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={removeEditVideo}
+                                className="absolute top-2 left-2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 transition-all"
+                                title="Remove video"
+                            >
+                                <CloseIcon className="text-white" style={{ fontSize: '18px' }} />
+                            </button>
                         </div>
                     )}
                 </CardContent>
