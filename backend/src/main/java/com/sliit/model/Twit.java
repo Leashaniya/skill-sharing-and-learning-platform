@@ -37,13 +37,14 @@ public class Twit {
     @OneToMany(mappedBy = "twit", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Like> likes = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "replyFor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Twit> replyTwits = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     private List<User> retwitUser = new ArrayList<>();
     
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_for_id", foreignKey = @ForeignKey(name = "FK_TWIT_REPLY"))
     private Twit replyFor;
 
     @Column(nullable = false)
@@ -66,4 +67,7 @@ public class Twit {
     private boolean isTwit;
     private boolean is_liked = false;
     private boolean is_retwit = false;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Notification> notifications = new ArrayList<>();
 }

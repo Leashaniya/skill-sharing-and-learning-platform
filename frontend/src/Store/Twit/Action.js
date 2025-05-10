@@ -1,14 +1,15 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../../Config/apiConfig';
+import { toast } from 'react-toastify';
 
 export const createComment = (twitId, content) => async (dispatch) => {
     try {
         const token = localStorage.getItem('jwt');
         const response = await axios.post(
             `${API_BASE_URL}/api/twits/reply`,
-            {
-                content: content,
-                twitId: twitId
+            { 
+                content,
+                twitId 
             },
             {
                 headers: {
@@ -17,8 +18,10 @@ export const createComment = (twitId, content) => async (dispatch) => {
                 },
             }
         );
+        toast.success('Comment posted!');
         return response.data;
     } catch (error) {
+        toast.error('Failed to post comment.');
         console.error('Error creating comment:', error);
         throw error;
     }
@@ -28,7 +31,7 @@ export const getComments = (twitId) => async (dispatch) => {
     try {
         const token = localStorage.getItem('jwt');
         const response = await axios.get(
-            `${API_BASE_URL}/api/twits/${twitId}`,
+            `${API_BASE_URL}/api/twits/${twitId}/details`,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -47,16 +50,18 @@ export const editComment = (commentId, content) => async (dispatch) => {
         const token = localStorage.getItem('jwt');
         const response = await axios.put(
             `${API_BASE_URL}/api/twits/${commentId}`,
-            { content },
+            null,
             {
+                params: { content },
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    Authorization: `Bearer ${token}`
                 },
             }
         );
+        toast.info('Comment updated!');
         return response.data;
     } catch (error) {
+        toast.error('Failed to update comment.');
         console.error('Error editing comment:', error);
         throw error;
     }
@@ -73,12 +78,11 @@ export const deleteComment = (commentId) => async (dispatch) => {
                 },
             }
         );
-        if (response.data && response.data.status) {
-            return { status: true, message: response.data.message };
-        }
-        throw new Error(response.data?.message || 'Failed to delete comment');
+        toast.success('Comment deleted!');
+        return response.data;
     } catch (error) {
+        toast.error('Failed to delete comment.');
         console.error('Error deleting comment:', error);
-        throw new Error(error.response?.data?.message || error.message || 'Failed to delete comment');
+        throw error;
     }
 }; 
