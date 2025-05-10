@@ -62,7 +62,7 @@ public class LearningPlan {
 
     public boolean isShared() { return isShared; }
     public void setShared(boolean shared) { isShared = shared; }
-
+// Get the list of shared plans (users who the plan is shared with)
     public List<SharedPlan> getSharedPlans() { return sharedPlans; }
     public void setSharedPlans(List<SharedPlan> sharedPlans) { this.sharedPlans = sharedPlans; }
 }
