@@ -21,6 +21,7 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sliit.request.TwitReplyRequest;
 
 @Entity
 @AllArgsConstructor
@@ -54,6 +55,8 @@ public class Notification {
     @JoinColumn(name = "post_id", foreignKey = @ForeignKey(name = "FK_NOTIFICATION_TWIT"))
     @JsonIgnore
     private Twit post;
+    
+    private String comment;
 
     @JsonProperty("postId")
     public Long getPostId() {

@@ -11,6 +11,7 @@ import com.sliit.model.Notification;
 import com.sliit.model.Twit;
 import com.sliit.model.User;
 import com.sliit.repository.NotificationRepository;
+import com.sliit.request.TwitReplyRequest;
 
 @Service
 public class NotificationService {
@@ -42,6 +43,19 @@ public class NotificationService {
         notification.setFrom(from);
         notification.setTo(to);
         notification.setPost(post);
+
+        notificationRepository.save(notification);
+    }
+
+    public void createCommentNotification(User from, User to, String comment) {
+
+        Notification notification = new Notification();
+        notification.setType("comment");
+        notification.setTimestamp(new Date());
+        notification.setIsRead(false);
+        notification.setFrom(from);
+        notification.setTo(to);
+        notification.setComment(comment);
 
         notificationRepository.save(notification);
     }
