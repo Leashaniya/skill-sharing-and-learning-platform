@@ -13,7 +13,7 @@ public class LearningPlanController {
 
     @Autowired
     private LearningPlanService service;
-
+// Endpoint to create a new learning plan
     @PostMapping
     public LearningPlanDTO create(@RequestBody LearningPlanDTO dto) {
         return service.createPlan(dto);
