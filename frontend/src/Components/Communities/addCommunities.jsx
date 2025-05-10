@@ -37,6 +37,8 @@ function AddCommunities() {
       newErrors.name = "Community name is required";
     } else if (name.length > 50) {
       newErrors.name = "Name must be less than 50 characters";
+    }else if (!/^[a-zA-Z0-9 ]+$/.test(name)) {
+      newErrors.name = "Name can only contain letters, numbers, and spaces";
     }
 
     if (!description.trim()) {
