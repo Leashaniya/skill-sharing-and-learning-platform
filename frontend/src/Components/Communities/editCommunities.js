@@ -462,5 +462,12 @@ function EditCommunity() {
     </div>
   );
 }
+useEffect(() => {
+  setIsLoading(true);
+  axios
+    .get(`http://localhost:5454/api/groups/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+      },
 
 export default EditCommunity;
