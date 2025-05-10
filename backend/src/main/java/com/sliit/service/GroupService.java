@@ -16,6 +16,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Service class to handle group-related business logic.
+ */
+
 @Service
 public class GroupService {
 
@@ -58,8 +62,13 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
 
+    
     /**
      * Update an existing group's fields and return the updated DTO.
+     *
+     * @param id the ID of the group to update.
+     * @param updatedGroupDTO the DTO with updated group data.
+     * @return the updated GroupDTO.
      */
 
 
