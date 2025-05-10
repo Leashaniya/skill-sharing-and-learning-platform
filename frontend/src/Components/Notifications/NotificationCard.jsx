@@ -11,6 +11,7 @@ export default function NotificationCard({
   isRead,
   trigger,
   setTrigger,
+  comment
 }) {
   console.log("post DEBUG", post);
 
@@ -36,10 +37,17 @@ export default function NotificationCard({
               ? " followed you"
               : type === "like"
               ? " liked your post"
+              :type === "comment"
+              ? " commented on your post"
               : ""}
           </span>
         </div>
       </div>
+      {comment ? (
+        <div className="mt-2 text-xs p-2 rounded border bg-white">
+          {comment}
+        </div>
+      ) : null}
       {post && post.content ? (
         <div className="mt-2 text-xs p-2 rounded border bg-white">
           {post?.content}

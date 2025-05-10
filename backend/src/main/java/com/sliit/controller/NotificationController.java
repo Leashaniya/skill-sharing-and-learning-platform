@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +41,7 @@ public class NotificationController {
         User loggedInUser = userService.findUserProfileByJwt(jwt);
 
         List<Notification> notifications = notificationService.getNotificationsForUser(loggedInUser);
+        Collections.reverse(notifications);
 
         return ResponseEntity.ok(notifications);
     }

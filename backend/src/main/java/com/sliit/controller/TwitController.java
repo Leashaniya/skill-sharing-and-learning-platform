@@ -21,6 +21,7 @@ import com.sliit.response.ApiResponse;
 import com.sliit.service.TwitService;
 import com.sliit.service.UserService;
 import com.sliit.service.CloudinaryService;
+import com.sliit.service.NotificationService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -32,11 +33,13 @@ public class TwitController {
 	private TwitService twitService;
 	private UserService userService;
 	private CloudinaryService cloudinaryService;
+	private NotificationService notificationService;
 	
-	public TwitController(TwitService twitService, UserService userService, CloudinaryService cloudinaryService) {
+	public TwitController(TwitService twitService, UserService userService, CloudinaryService cloudinaryService, NotificationService notificationService) {
 		this.twitService = twitService;
 		this.userService = userService;
 		this.cloudinaryService = cloudinaryService;
+		this.notificationService = notificationService;
 	}
 	
 	@PostMapping("/create")
@@ -75,6 +78,10 @@ public class TwitController {
 		User user = userService.findUserProfileByJwt(jwt);
 		Twit twit = twitService.createReply(req, user);
 		TwitDto twitDto = TwitDtoMapper.toTwitDto(twit, user);
+
+		// Create a notification for the user being replied to
+		notificationService.createCommentNotification(user, twit.getUser(), req.getContent());
+
 		return new ResponseEntity<>(twitDto, HttpStatus.CREATED);
 	}
 	

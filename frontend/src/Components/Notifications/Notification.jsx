@@ -45,6 +45,7 @@ export default function Notification({
             }}
             trigger={trigger}
             setTrigger={setTrigger}
+            comment={notification?.comment}
           />
         ))
       ) : (
