@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * REST controller for managing groups and group members.
+ */
+
 @Slf4j
 @RestController
 @RequestMapping("/api/groups")
@@ -25,12 +29,24 @@ public class GroupController {
         return ResponseEntity.ok(groupService.createGroup(groupDTO));
     }
 
+     /**
+     * Retrieves a group by its ID.
+     * @param id the ID of the group
+     * @return the group if found, or 404 if not found
+     */
+    
+
     @GetMapping("/{id}")
     public ResponseEntity<GroupDTO> getGroup(@PathVariable Long id) {
         return groupService.getGroup(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+     /**
+     * Retrieves all existing groups.
+     * @return a list of all groups
+     */
 
     @GetMapping
     public List<GroupDTO> getAllGroups() {
@@ -52,6 +68,13 @@ public class GroupController {
     public ResponseEntity<GroupUserDTO> addUserToGroup(@PathVariable Long groupId, @PathVariable Long userId) {
         return ResponseEntity.ok(groupService.addUserToGroup(groupId, userId));
     }
+
+
+      /**
+     * Retrieves all users in a specific group.
+     * @param groupId the ID of the group
+     * @return a list of users in the group
+     */
 
     @GetMapping("/{groupId}/users")
     public ResponseEntity<List<GroupUserDTO>> getUsersInGroup(@PathVariable Long groupId) {

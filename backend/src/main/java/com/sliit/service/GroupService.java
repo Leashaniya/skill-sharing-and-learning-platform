@@ -16,6 +16,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Service class to handle group-related business logic.
+ */
+
 @Service
 public class GroupService {
 
@@ -26,6 +30,11 @@ public class GroupService {
     @Autowired
     private GroupUserRepository groupUserRepository;
 
+       /**
+     * Create and persist a new group based on the provided DTO.
+     */
+
+
     public GroupDTO createGroup(GroupDTO groupDTO) {
         Group group = new Group(groupDTO.getName(), groupDTO.getDescription(),groupDTO.getGroupImage(),groupDTO.getIsPublic(),groupDTO.getOwnerId());
 
@@ -33,16 +42,35 @@ public class GroupService {
         return new GroupDTO(savedGroup.getId(), savedGroup.getName(), savedGroup.getDescription(),savedGroup.getGroupImage(),savedGroup.getIsPublic(),savedGroup.getOwnerId());
     }
 
+      /**
+     * Retrieve a group by its ID and map it to GroupDTO.
+     */
+
+     
     public Optional<GroupDTO> getGroup(Long id) {
         return groupRepository.findById(id)
                 .map(group -> new GroupDTO(group.getId(), group.getName(), group.getDescription(),group.getGroupImage(),group.getIsPublic(),group.getOwnerId()));
     }
+
+    /**
+     * Retrieve all groups and map them to a list of GroupDTOs.
+     */
 
     public List<GroupDTO> getAllGroups() {
         return groupRepository.findAll().stream()
                 .map(group -> new GroupDTO(group.getId(), group.getName(), group.getDescription(),group.getGroupImage(),group.getIsPublic(),group.getOwnerId()))
                 .collect(Collectors.toList());
     }
+
+    
+    /**
+     * Update an existing group's fields and return the updated DTO.
+     *
+     * @param id the ID of the group to update.
+     * @param updatedGroupDTO the DTO with updated group data.
+     * @return the updated GroupDTO.
+     */
+
 
     public GroupDTO updateGroup(Long id, GroupDTO updatedGroupDTO) {
         return groupRepository.findById(id).map(group -> {
@@ -57,9 +85,18 @@ public class GroupService {
         }).orElseThrow(() -> new RuntimeException("Group not found"));
     }
 
+     /**
+     * Delete a group by its ID.
+     */
+
     public void deleteGroup(Long id) {
         groupRepository.deleteById(id);
     }
+
+    /**
+     * Add a user to a group if not already added.
+     */
+
 
     public GroupUserDTO addUserToGroup(Long groupId, Long userId) {
         Group group = groupRepository.findById(groupId)
@@ -75,7 +112,10 @@ log.info(String.valueOf(groupId),userId);
 
         return new GroupUserDTO(savedGroupUser.getId(), savedGroupUser.getGroup().getId(), savedGroupUser.getUserId());
     }
-
+ 
+    /**
+     * Get a list of users associated with a specific group.
+     */
 
     public List<GroupUserDTO> getUsersInGroup(Long groupId) {
         return groupUserRepository.findByGroupId(groupId).stream()

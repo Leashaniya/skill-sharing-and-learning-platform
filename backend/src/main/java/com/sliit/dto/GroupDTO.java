@@ -3,13 +3,19 @@ package com.sliit.dto;
 import com.sliit.model.GroupUser;
 import java.util.List;
 
+/**
+ * Data Transfer Object representing a Group entity.
+ * Used to transfer group data between the controller, service, and other layers.
+ */
+
+
 public class GroupDTO {
-    private Long id;
-    private String name;
-    private String description;
-    private String groupImage;
-    private Boolean isPublic;
-    private Long ownerId;
+    private Long id;    /** Unique identifier for the group */
+    private String name; /** Name of the group */
+    private String description; /** Description of the group */
+    private String groupImage;  /** Image URL or path representing the group */
+    private Boolean isPublic;   /** Indicates whether the group is public or private */
+    private Long ownerId; /** ID of the user who owns the group */
 
     public GroupDTO() {}
 
