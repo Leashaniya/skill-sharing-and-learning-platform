@@ -6,6 +6,7 @@ import GroupIcon from '@mui/icons-material/Group'
 import SchoolIcon from '@mui/icons-material/School'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
+import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 
 export const navigationMenu = [
     {
@@ -25,7 +26,7 @@ export const navigationMenu = [
     },
     {
         title: "Learning Journey",
-        icon: <AutoStoriesIcon />,
+        icon: <LocalLibraryIcon />,
         path: "/learning-journey"
     },
     {
