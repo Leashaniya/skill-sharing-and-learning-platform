@@ -77,7 +77,7 @@ const Navigation = () => {
             <Avatar alt={auth.user?.fullName} src={auth.user?.image} />
             <div>
               <p>{auth.user?.fullName}</p>
-              <span className="opacity-70">@{auth.user?.fullName.split(" ").join("_").toLowerCase()}</span>
+              <span className="opacity-70">@{auth.user?.fullName?.split(" ").join("_").toLowerCase()}</span>
             </div>
           </div>
           <Button
