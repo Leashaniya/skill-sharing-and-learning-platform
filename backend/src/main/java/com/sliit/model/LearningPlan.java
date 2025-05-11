@@ -20,7 +20,7 @@ public class LearningPlan {
     private String resources;
     private LocalDate deadline;
     private boolean isShared;
-
+// One-to-Many relationship with SharedPlan (one LearningPlan can be shared with many users)
     @OneToMany(mappedBy = "learningPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SharedPlan> sharedPlans = new ArrayList<>(); // ✅ new relation
 
@@ -62,7 +62,7 @@ public class LearningPlan {
 
     public boolean isShared() { return isShared; }
     public void setShared(boolean shared) { isShared = shared; }
-
+// Get the list of shared plans (users who the plan is shared with)
     public List<SharedPlan> getSharedPlans() { return sharedPlans; }
     public void setSharedPlans(List<SharedPlan> sharedPlans) { this.sharedPlans = sharedPlans; }
 }
